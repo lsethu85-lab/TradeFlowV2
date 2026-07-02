@@ -1,0 +1,3174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Enterprise Letter of Credit Document Checking Dashboard">
+    <meta name="theme-color" content="#1f2937">
+    <title>LC Document Checking Dashboard | Trade Finance Management</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.0.0/fonts/remixicon.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/flatpickr/dist/flatpickr.min.css">
+    
+    <style>
+        /* ==================== CSS RESET & VARIABLES ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0066cc;
+            --primary-dark: #004999;
+            --primary-light: #e6f2ff;
+            --secondary: #00a3e0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --dark: #1f2937;
+            --dark-secondary: #374151;
+            --dark-tertiary: #4b5563;
+            --light: #f9fafb;
+            --light-secondary: #f3f4f6;
+            --light-tertiary: #e5e7eb;
+            --text: #111827;
+            --text-secondary: #6b7280;
+            --border: #d1d5db;
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --sidebar-width: 280px;
+            --header-height: 70px;
+        }
+
+        html.dark-mode {
+            --text: #f9fafb;
+            --text-secondary: #d1d5db;
+            --light: #1f2937;
+            --light-secondary: #374151;
+            --light-tertiary: #4b5563;
+            --border: #4b5563;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: var(--text);
+            background: var(--light);
+            transition: var(--transition);
+        }
+
+        /* ==================== LAYOUT ==================== */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background: var(--light);
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--dark);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-lg);
+            transition: var(--transition);
+            position: relative;
+            z-index: 100;
+            overflow-y: auto;
+        }
+
+        .sidebar.collapsed {
+            width: 80px;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            height: var(--header-height);
+            background: white;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            box-shadow: var(--shadow);
+        }
+
+        html.dark-mode .header {
+            background: var(--dark-secondary);
+            border-color: var(--dark-tertiary);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .toggle-sidebar-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .toggle-sidebar-btn:hover {
+            color: var(--primary);
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            padding: 8px 35px 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--light-secondary);
+            color: var(--text);
+            width: 250px;
+            transition: var(--transition);
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .search-box i {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--light-secondary);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: var(--text);
+            transition: var(--transition);
+        }
+
+        .icon-btn:hover {
+            background: var(--light-tertiary);
+            color: var(--primary);
+        }
+
+        .content-area {
+            flex: 1;
+            overflow: auto;
+            padding: 30px;
+            background: var(--light);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .content-wrapper {
+            flex: 1;
+        }
+
+        /* ==================== FOOTER ==================== */
+        .app-footer {
+            margin-top: 40px;
+            padding: 30px;
+            border-top: 1px solid var(--border);
+            background: var(--light);
+            text-align: center;
+        }
+
+        html.dark-mode .app-footer {
+            background: var(--dark);
+            border-color: var(--dark-tertiary);
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .footer-brand i {
+            font-size: 20px;
+        }
+
+        .footer-disclaimer {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .footer-disclaimer p {
+            margin: 8px 0;
+        }
+
+        .footer-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 15px 0;
+        }
+
+        html.dark-mode .footer-divider {
+            background: var(--dark-tertiary);
+        }
+
+        .footer-links {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            font-size: 12px;
+        }
+
+        .footer-links a {
+            color: var(--primary);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-copyright {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 15px;
+        }
+
+        /* ==================== SIDEBAR ==================== */
+        .logo {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .sidebar.collapsed .logo-text {
+            display: none;
+        }
+
+        .nav-menu {
+            flex: 1;
+            padding: 20px 0;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            padding: 0 15px;
+            margin-bottom: 8px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 15px;
+            color: #cbd5e1;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: var(--transition);
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: left;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-link.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .nav-link i {
+            font-size: 20px;
+            min-width: 20px;
+        }
+
+        .sidebar.collapsed .nav-link span {
+            display: none;
+        }
+
+        .nav-section-title {
+            padding: 12px 30px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #94a3b8;
+            margin-top: 15px;
+        }
+
+        .sidebar.collapsed .nav-section-title {
+            display: none;
+        }
+
+        /* ==================== DASHBOARD GRID ==================== */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .page-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--light-secondary);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--light-tertiary);
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            border: 1px solid var(--border);
+        }
+
+        html.dark-mode .card {
+            background: var(--dark-secondary);
+            border-color: var(--dark-tertiary);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-4px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .card-icon.primary {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .card-icon.success {
+            background: #dcfce7;
+            color: var(--success);
+        }
+
+        .card-icon.warning {
+            background: #fef3c7;
+            color: var(--warning);
+        }
+
+        .card-icon.danger {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .card-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+
+        .card-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* ==================== TABLES ==================== */
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+
+        html.dark-mode .table-container {
+            background: var(--dark-secondary);
+            border-color: var(--dark-tertiary);
+        }
+
+        .table-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        html.dark-mode .table-header {
+            border-color: var(--dark-tertiary);
+        }
+
+        .table-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: var(--light-secondary);
+            padding: 12px 20px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        html.dark-mode th {
+            background: var(--dark-tertiary);
+            border-color: var(--dark-tertiary);
+        }
+
+        td {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        html.dark-mode td {
+            border-color: var(--dark-tertiary);
+        }
+
+        tr:hover {
+            background: var(--light-secondary);
+        }
+
+        html.dark-mode tr:hover {
+            background: var(--dark-tertiary);
+        }
+
+        /* ==================== MODAL ==================== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        html.dark-mode .modal {
+            background: var(--dark-secondary);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        html.dark-mode .modal-header {
+            border-color: var(--dark-tertiary);
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .modal-close:hover {
+            color: var(--text);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        html.dark-mode .modal-footer {
+            border-color: var(--dark-tertiary);
+        }
+
+        /* ==================== FORMS ==================== */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            color: var(--text);
+            background: white;
+            transition: var(--transition);
+        }
+
+        html.dark-mode .form-control {
+            background: var(--dark-tertiary);
+            border-color: var(--dark-tertiary);
+            color: var(--text);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .form-control.error {
+            border-color: var(--danger);
+        }
+
+        .form-error {
+            color: var(--danger);
+            font-size: 12px;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .form-error.show {
+            display: block;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            color: var(--light-tertiary);
+            margin-bottom: 20px;
+        }
+
+        .empty-state-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+
+        .empty-state-text {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 30px;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        /* ==================== TOAST NOTIFICATIONS ==================== */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 400px;
+        }
+
+        .toast {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideInRight 0.3s ease-out;
+            border-left: 4px solid var(--info);
+        }
+
+        .toast.success {
+            border-left-color: var(--success);
+            color: #166534;
+        }
+
+        .toast.success i {
+            color: var(--success);
+        }
+
+        .toast.error {
+            border-left-color: var(--danger);
+            color: #991b1b;
+        }
+
+        .toast.error i {
+            color: var(--danger);
+        }
+
+        .toast.warning {
+            border-left-color: var(--warning);
+            color: #92400e;
+        }
+
+        .toast.warning i {
+            color: var(--warning);
+        }
+
+        .toast i {
+            font-size: 20px;
+        }
+
+        .toast-message {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: inherit;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .toast-close:hover {
+            opacity: 1;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        .toast.hide {
+            animation: slideOutRight 0.3s ease-out forwards;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: var(--light-secondary);
+        }
+
+        .drop-zone:hover,
+        .drop-zone.active {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .drop-zone-icon {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .drop-zone-text {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+
+
+        .file-input-hidden {
+            position: absolute !important;
+            left: -9999px !important;
+            width: 1px !important;
+            height: 1px !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        .drop-zone {
+            position: relative;
+            user-select: none;
+        }
+        .drop-zone.upload-ready {
+            border-color: var(--primary);
+        }
+        .drop-zone .btn {
+            cursor: pointer;
+        }
+        .document-upload-error {
+            margin-top: 10px;
+            color: var(--danger);
+            font-size: 12px;
+            display: none;
+            white-space: pre-wrap;
+            text-align: left;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            border-radius: 6px;
+            padding: 8px 10px;
+        }
+        .document-upload-error.show {
+            display: block;
+        }
+
+        /* ==================== DOCUMENT UPLOAD FIX & ABOUT DASHBOARD ==================== */
+        .drop-zone.drag-over {
+            border-color: var(--success);
+            background: #ecfdf5;
+            transform: scale(1.01);
+        }
+        html.dark-mode .drop-zone.drag-over {
+            background: rgba(16, 185, 129, 0.12);
+        }
+        .upload-helper {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        .feature-guide-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 18px;
+            margin-bottom: 30px;
+        }
+        .feature-guide-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: var(--shadow);
+        }
+        html.dark-mode .feature-guide-card {
+            background: var(--dark-secondary);
+            border-color: var(--dark-tertiary);
+        }
+        .feature-guide-card h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: var(--text);
+        }
+        .feature-guide-card h3 i {
+            color: var(--primary);
+            font-size: 20px;
+        }
+        .feature-guide-card p,
+        .feature-guide-card li {
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.55;
+        }
+        .feature-guide-card ul {
+            padding-left: 18px;
+            margin-top: 8px;
+        }
+        .how-to-panel {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+        }
+        html.dark-mode .how-to-panel {
+            background: var(--dark-secondary);
+            border-color: var(--dark-tertiary);
+        }
+        .how-to-steps {
+            counter-reset: step;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            margin-top: 14px;
+        }
+        .how-to-step {
+            position: relative;
+            padding: 14px 14px 14px 44px;
+            background: var(--light-secondary);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        html.dark-mode .how-to-step {
+            background: var(--dark-tertiary);
+        }
+        .how-to-step::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 12px;
+            top: 14px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        /* ==================== RESPONSIVE ==================== */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 80px;
+            }
+
+            .sidebar.collapsed {
+                width: 80px;
+            }
+
+            .logo-text,
+            .nav-link span,
+            .nav-section-title {
+                display: none;
+            }
+
+            .cards-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                padding: 0;
+            }
+
+            .logo {
+                padding: 15px 20px;
+                border-bottom: none;
+                border-right: 1px solid rgba(255, 255, 255, 0.1);
+                margin-right: auto;
+            }
+
+            .nav-menu {
+                display: flex;
+                flex-direction: row;
+                padding: 0;
+                overflow-y: visible;
+                overflow-x: auto;
+                flex: 1;
+            }
+
+            .nav-item {
+                padding: 0;
+                margin-bottom: 0;
+                border-right: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .nav-link {
+                padding: 15px 20px;
+                margin-bottom: 0;
+            }
+
+            .nav-section-title {
+                display: none;
+            }
+
+            .header {
+                padding: 0 15px;
+                flex-wrap: wrap;
+            }
+
+            .search-box input {
+                width: 100%;
+            }
+
+            .page-title {
+                font-size: 22px;
+            }
+
+            .cards-grid {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 15px;
+            }
+
+            .card {
+                padding: 15px;
+            }
+
+            .card-value {
+                font-size: 24px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .modal {
+                width: 95%;
+            }
+
+            .toast-container {
+                top: 10px;
+                right: 10px;
+            }
+
+            .toast {
+                min-width: 280px;
+            }
+
+            table {
+                font-size: 13px;
+            }
+
+            td,
+            th {
+                padding: 10px 12px;
+            }
+
+            .app-footer {
+                padding: 20px;
+                margin-top: 20px;
+            }
+
+            .footer-links {
+                font-size: 11px;
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-title {
+                font-size: 20px;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card-value {
+                font-size: 24px;
+            }
+
+            .page-actions {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .header-title {
+                font-size: 16px;
+            }
+
+            .modal {
+                width: 98%;
+                max-height: 95vh;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                gap: 15px;
+            }
+
+            .app-footer {
+                padding: 15px;
+                margin-top: 15px;
+            }
+
+            .footer-disclaimer {
+                font-size: 11px;
+            }
+
+            .footer-links {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- SIDEBAR -->
+        <nav class="sidebar" id="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="ri-file-contract-line"></i>
+                </div>
+                <span class="logo-text">LC Dashboard</span>
+            </div>
+
+            <div class="nav-menu" id="navMenu">
+                <div class="nav-item">
+                    <button class="nav-link active" data-page="dashboard">
+                        <i class="ri-dashboard-line"></i>
+                        <span>Dashboard</span>
+                    </button>
+                </div>
+
+                <div class="nav-section-title">Management</div>
+
+                <div class="nav-item">
+                    <button class="nav-link" data-page="lc-cases">
+                        <i class="ri-file-list-line"></i>
+                        <span>LC Cases</span>
+                    </button>
+                </div>
+
+                <div class="nav-item">
+                    <button class="nav-link" data-page="documents">
+                        <i class="ri-file-upload-line"></i>
+                        <span>Document Upload</span>
+                    </button>
+                </div>
+
+                <div class="nav-item">
+                    <button class="nav-link" data-page="compliance">
+                        <i class="ri-checkbox-circle-line"></i>
+                        <span>Compliance Checker</span>
+                    </button>
+                </div>
+
+                <div class="nav-item">
+                    <button class="nav-link" data-page="discrepancies">
+                        <i class="ri-alert-line"></i>
+                        <span>Discrepancies</span>
+                    </button>
+                </div>
+
+                <div class="nav-section-title">Tools</div>
+
+                <div class="nav-item">
+                    <button class="nav-link" data-page="tasks">
+                        <i class="ri-task-line"></i>
+                        <span>Task Management</span>
+                    </button>
+                </div>
+
+                <div class="nav-item">
+                    <button class="nav-link" data-page="calendar">
+                        <i class="ri-calendar-line"></i>
+                        <span>Calendar</span>
+                    </button>
+                </div>
+
+                <div class="nav-item">
+                    <button class="nav-link" data-page="reports">
+                        <i class="ri-bar-chart-line"></i>
+                        <span>Reports</span>
+                    </button>
+                </div>
+
+                <div class="nav-section-title">Other</div>
+
+                <div class="nav-item">
+                    <button class="nav-link" data-page="audit-trail">
+                        <i class="ri-history-line"></i>
+                        <span>Audit Trail</span>
+                    </button>
+                </div>
+
+
+                <div class="nav-item">
+                    <button class="nav-link" data-page="about-dashboard">
+                        <i class="ri-questionnaire-line"></i>
+                        <span>About Dashboard</span>
+                    </button>
+                </div>
+                <div class="nav-item">
+                    <button class="nav-link" data-page="settings">
+                        <i class="ri-settings-line"></i>
+                        <span>Settings</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+            <!-- HEADER -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="toggle-sidebar-btn" id="toggleSidebar">
+                        <i class="ri-menu-line"></i>
+                    </button>
+                    <h1 class="header-title" id="headerTitle">Dashboard</h1>
+                </div>
+
+                <div class="header-right">
+                    <div class="search-box">
+                        <input type="text" id="globalSearch" placeholder="Search LC, Customer, Bank...">
+                        <i class="ri-search-line"></i>
+                    </div>
+
+                    <div class="header-actions">
+                        <button class="icon-btn" id="themeToggle" title="Toggle Theme">
+                            <i class="ri-moon-line"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- CONTENT AREA -->
+            <div class="content-area">
+                <div class="content-wrapper" id="contentArea">
+                    <!-- DASHBOARD PAGE -->
+                    <div class="page active" id="dashboard-page" data-page="dashboard">
+                        <div class="page-header">
+                            <div>
+                                <h2 class="page-title">LC Management Dashboard</h2>
+                                <p style="color: var(--text-secondary); margin-top: 5px; font-size: 14px;">Welcome back! Here's your LC overview.</p>
+                            </div>
+                            <div class="page-actions">
+                                <button class="btn btn-primary" id="createLCBtn">
+                                    <i class="ri-add-line"></i>
+                                    Create New LC
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- SUMMARY CARDS -->
+                        <div class="cards-grid">
+                            <div class="card">
+                                <div class="card-header">
+                                    <div><div class="card-title">Total LC Cases</div></div>
+                                    <div class="card-icon primary"><i class="ri-file-list-line"></i></div>
+                                </div>
+                                <div class="card-value" id="totalLCCount">0</div>
+                                <div class="card-meta"><span>Active cases</span></div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <div><div class="card-title">Pending Review</div></div>
+                                    <div class="card-icon warning"><i class="ri-eye-line"></i></div>
+                                </div>
+                                <div class="card-value" id="pendingCount">0</div>
+                                <div class="card-meta"><span>Awaiting action</span></div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <div><div class="card-title">Approved</div></div>
+                                    <div class="card-icon success"><i class="ri-check-double-line"></i></div>
+                                </div>
+                                <div class="card-value" id="approvedCount">0</div>
+                                <div class="card-meta"><span>Ready for payment</span></div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <div><div class="card-title">Discrepancies</div></div>
+                                    <div class="card-icon danger"><i class="ri-error-warning-line"></i></div>
+                                </div>
+                                <div class="card-value" id="discrepancyCount">0</div>
+                                <div class="card-meta"><span>Require attention</span></div>
+                            </div>
+                        </div>
+
+                        <!-- CHARTS -->
+                        <div class="charts-grid">
+                            <div class="table-container">
+                                <div class="table-header">
+                                    <div class="table-title">LC Status Overview</div>
+                                </div>
+                                <div class="chart-container" style="padding: 20px;">
+                                    <canvas id="statusChart"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="table-container">
+                                <div class="table-header">
+                                    <div class="table-title">Documents Completion</div>
+                                </div>
+                                <div class="chart-container" style="padding: 20px;">
+                                    <canvas id="completionChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RECENT LC CASES TABLE -->
+                        <div class="table-container">
+                            <div class="table-header">
+                                <div class="table-title">Recent LC Cases</div>
+                            </div>
+                            <div style="overflow-x: auto;">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>LC Number</th>
+                                            <th>Beneficiary</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                            <th>Documents</th>
+                                            <th>Compliance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentLCTable">
+                                        <tr>
+                                            <td colspan="6" class="text-center" style="padding: 40px;">
+                                                <div class="empty-state">
+                                                    <div class="empty-state-icon"><i class="ri-inbox-line"></i></div>
+                                                    <div class="empty-state-title">No LC Cases Yet</div>
+                                                    <div class="empty-state-text">Create your first LC case to get started</div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LC CASES PAGE -->
+                    <div class="page" id="lc-cases-page" data-page="lc-cases">
+                        <div class="page-header">
+                            <h2 class="page-title">LC Cases Management</h2>
+                            <div class="page-actions">
+                                <button class="btn btn-primary" id="createLCBtn2">
+                                    <i class="ri-add-line"></i>
+                                    Create New LC
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <div class="table-header">
+                                <div class="table-title">All LC Cases</div>
+                            </div>
+                            <div style="overflow-x: auto;">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>LC Number</th>
+                                            <th>Applicant</th>
+                                            <th>Beneficiary</th>
+                                            <th>Amount</th>
+                                            <th>Currency</th>
+                                            <th>Expiry Date</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="lcCasesTable">
+                                        <tr>
+                                            <td colspan="8" class="text-center" style="padding: 40px;">
+                                                <div class="empty-state">
+                                                    <div class="empty-state-icon"><i class="ri-file-list-line"></i></div>
+                                                    <div class="empty-state-title">No LC Cases</div>
+                                                    <div class="empty-state-text">Create a new LC case to begin</div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TASK MANAGEMENT PAGE -->
+                    <div class="page" id="tasks-page" data-page="tasks">
+                        <div class="page-header">
+                            <h2 class="page-title">Task Management</h2>
+                            <div class="page-actions">
+                                <button class="btn btn-primary" id="createTaskBtn">
+                                    <i class="ri-add-line"></i>
+                                    Create Task
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <div class="table-header">
+                                <div class="table-title">All Tasks</div>
+                            </div>
+                            <div style="overflow-x: auto;">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Task Title</th>
+                                            <th>Assigned To</th>
+                                            <th>Priority</th>
+                                            <th>Due Date</th>
+                                            <th>Status</th>
+                                            <th>Related LC</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tasksTable">
+                                        <tr>
+                                            <td colspan="7" class="text-center" style="padding: 40px;">
+                                                <div class="empty-state">
+                                                    <div class="empty-state-icon"><i class="ri-task-line"></i></div>
+                                                    <div class="empty-state-title">No Tasks</div>
+                                                    <div class="empty-state-text">Create your first task to get started</div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DOCUMENTS PAGE -->
+                    <div class="page" id="documents-page" data-page="documents">
+                        <div class="page-header">
+                            <h2 class="page-title">Document Upload Center</h2>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Select LC Case</label>
+                            <select id="docLCSelect" class="form-control">
+                                <option value="">-- Select LC Case --</option>
+                            </select>
+                        </div>
+
+                        <div class="table-container" style="margin-bottom: 30px;">
+                            <div class="table-header">
+                                <div class="table-title">Drop Zone - Drag & Drop Documents</div>
+                            </div>
+                            <div style="padding: 20px;">
+                                <div class="drop-zone" id="dropZone">
+                                    <div class="drop-zone-icon">
+                                        <i class="ri-upload-cloud-line"></i>
+                                    </div>
+                                    <div class="drop-zone-text">
+                                        <strong>Drag and drop files here</strong><br>
+                                        or click to select files
+                                    </div>
+                                    <div class="upload-helper">Supported: PDF, images (PNG/JPG/GIF/WEBP), Word (DOC/DOCX), Excel (XLS/XLSX), CSV, and TXT. Max 10 MB per file. Upload after selecting an LC case, or upload as Unassigned and link later.</div>
+                                    <div style="margin-top: 14px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                                        <label for="fileInput" class="btn btn-primary" id="browseFilesBtn" role="button" tabindex="0">
+                                            <i class="ri-folder-open-line"></i>
+                                            Browse Files
+                                        </label>
+                                        <button type="button" class="btn btn-secondary" id="clearDocumentFilterBtn">
+                                            <i class="ri-filter-off-line"></i>
+                                            Show All Uploaded
+                                        </button>
+                                    </div>
+                                    <div class="document-upload-error" id="documentUploadError"></div>
+                                    <input type="file" id="fileInput" multiple class="file-input-hidden" aria-label="Upload LC documents" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.doc,.docx,.xls,.xlsx,.csv,.txt,application/pdf,image/png,image/jpeg,image/gif,image/webp,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <div class="table-header">
+                                <div class="table-title">Uploaded Documents</div>
+                            </div>
+                            <div style="overflow-x: auto;">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>File Name</th>
+                                            <th>Category</th>
+                                            <th>Upload Date</th>
+                                            <th>File Size</th>
+                                            <th>Status</th>
+                                            <th>Version</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="documentsTable">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- COMPLIANCE PAGE -->
+                    <div class="page" id="compliance-page" data-page="compliance">
+                        <div class="page-header">
+                            <h2 class="page-title">Compliance Checker</h2>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Select LC Case</label>
+                            <select id="complianceLCSelect" class="form-control">
+                                <option value="">-- Select LC Case --</option>
+                            </select>
+                        </div>
+
+                        <div class="table-container">
+                            <div class="table-header">
+                                <div class="table-title">Compliance Check Results</div>
+                            </div>
+                            <div style="overflow-x: auto;">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Check Item</th>
+                                            <th>Status</th>
+                                            <th>Details</th>
+                                            <th>Last Checked</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="complianceTable">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DISCREPANCIES PAGE -->
+                    <div class="page" id="discrepancies-page" data-page="discrepancies">
+                        <div class="page-header">
+                            <h2 class="page-title">Discrepancy Dashboard</h2>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Filter by Status</label>
+                            <select id="discrepancyFilterStatus" class="form-control">
+                                <option value="">All Discrepancies</option>
+                                <option value="critical">Critical</option>
+                                <option value="major">Major</option>
+                                <option value="minor">Minor</option>
+                            </select>
+                        </div>
+
+                        <div class="table-container">
+                            <div class="table-header">
+                                <div class="table-title">Identified Discrepancies</div>
+                            </div>
+                            <div style="overflow-x: auto;">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>LC Number</th>
+                                            <th>Description</th>
+                                            <th>Severity</th>
+                                            <th>Affected Document</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="discrepanciesTable">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CALENDAR PAGE -->
+                    <div class="page" id="calendar-page" data-page="calendar">
+                        <div class="page-header">
+                            <h2 class="page-title">LC Calendar & Deadlines</h2>
+                        </div>
+
+                        <div class="table-container">
+                            <div class="table-header">
+                                <div class="table-title">Upcoming Events</div>
+                            </div>
+                            <div style="overflow-x: auto;">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Event Type</th>
+                                            <th>LC Number</th>
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th>Days Remaining</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="calendarTable">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- REPORTS PAGE -->
+                    <div class="page" id="reports-page" data-page="reports">
+                        <div class="page-header">
+                            <h2 class="page-title">Reports & Analytics</h2>
+                        </div>
+
+                        <div class="cards-grid">
+                            <div class="card">
+                                <div class="card-title">Total Revenue</div>
+                                <div class="card-value" id="totalRevenue">$0</div>
+                            </div>
+                            <div class="card">
+                                <div class="card-title">Processing Rate</div>
+                                <div class="card-value" id="processingRate">0%</div>
+                            </div>
+                            <div class="card">
+                                <div class="card-title">Avg Processing Time</div>
+                                <div class="card-value" id="avgTime">0 days</div>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <div class="table-header">
+                                <div class="table-title">Performance Report</div>
+                            </div>
+                            <div style="overflow-x: auto;">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Metric</th>
+                                            <th>Value</th>
+                                            <th>Target</th>
+                                            <th>Variance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reportsTable">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AUDIT TRAIL PAGE -->
+                    <div class="page" id="audit-trail-page" data-page="audit-trail">
+                        <div class="page-header">
+                            <h2 class="page-title">Audit Trail & Activity Log</h2>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Filter by Action Type</label>
+                            <select id="auditFilterType" class="form-control">
+                                <option value="">All Activities</option>
+                                <option value="create">Created</option>
+                                <option value="update">Updated</option>
+                                <option value="delete">Deleted</option>
+                                <option value="upload">Uploaded</option>
+                            </select>
+                        </div>
+
+                        <div class="table-container">
+                            <div class="table-header">
+                                <div class="table-title">Activity Log</div>
+                            </div>
+                            <div style="overflow-x: auto;">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Date & Time</th>
+                                            <th>User</th>
+                                            <th>Action</th>
+                                            <th>Entity</th>
+                                            <th>Changes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="auditTable">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- ABOUT DASHBOARD PAGE -->
+                    <div class="page" id="about-dashboard-page" data-page="about-dashboard">
+                        <div class="page-header">
+                            <div>
+                                <h2 class="page-title">About Dashboard</h2>
+                                <p style="color: var(--text-secondary); margin-top: 5px; font-size: 14px;">A complete guide explaining every LC Dashboard feature and how to use it.</p>
+                            </div>
+                            <div class="page-actions">
+                                <button class="btn btn-primary" onclick="navigateToPage('dashboard')">
+                                    <i class="ri-dashboard-line"></i>
+                                    Go to Dashboard
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="how-to-panel">
+                            <h3 style="margin-bottom: 8px;">Recommended Workflow</h3>
+                            <p style="color: var(--text-secondary); font-size: 13px; line-height: 1.6;">Use this dashboard as a step-by-step LC operations workspace from LC registration to document checking, compliance review, discrepancy tracking and management reporting.</p>
+                            <div class="how-to-steps">
+                                <div class="how-to-step"><strong>Create LC:</strong> Start by creating a new LC case with applicant, beneficiary, issuing bank, amount, currency and expiry details.</div>
+                                <div class="how-to-step"><strong>Upload Documents:</strong> Select the LC case, then drag and drop files, click the upload zone, or use the Browse Files button to attach commercial documents.</div>
+                                <div class="how-to-step"><strong>Check Compliance:</strong> Use the compliance area to review document readiness and LC terms before approval.</div>
+                                <div class="how-to-step"><strong>Resolve Discrepancies:</strong> Track mismatches, missing details and corrections before final processing.</div>
+                                <div class="how-to-step"><strong>Assign Tasks:</strong> Create tasks for operations team members with due dates and priorities.</div>
+                                <div class="how-to-step"><strong>Monitor KPIs:</strong> Review alerts, SLA breaches, exposure, deadlines and reports from the dashboard.</div>
+                            </div>
+                        </div>
+
+                        <div class="feature-guide-grid">
+                            <div class="feature-guide-card"><h3><i class="ri-dashboard-line"></i> Dashboard</h3><p>Shows an executive overview of your LC portfolio including total cases, pending reviews, approvals, discrepancies, total exposure, expiring LCs, SLA status, priority alerts and workflow progress.</p><ul><li>Use KPI cards for quick management review.</li><li>Use alerts to identify urgent cases.</li><li>Use charts to understand status and completion trends.</li></ul></div>
+                            <div class="feature-guide-card"><h3><i class="ri-file-list-line"></i> LC Cases</h3><p>Stores the master LC register. Each case includes LC number, applicant, beneficiary, issuing/advising bank, amount, currency, expiry date and processing status.</p><ul><li>Create new cases from the Create New LC button.</li><li>Review all existing cases in table format.</li><li>Delete incorrect test records if needed.</li></ul></div>
+                            <div class="feature-guide-card"><h3><i class="ri-file-upload-line"></i> Document Upload</h3><p>Attach trade documents to a selected LC case. The drag-and-drop area now supports selecting files by clicking or dropping files directly onto the upload box.</p><ul><li>Select an LC case first, or upload as Unassigned and organise later.</li><li>Drop one or many files into the zone.</li><li>Uploaded file metadata is saved locally in the browser.</li></ul></div>
+                            <div class="feature-guide-card"><h3><i class="ri-checkbox-circle-line"></i> Compliance Checker</h3><p>Designed to help operations teams review whether documents and LC details meet required terms, internal controls and checking standards.</p><ul><li>Select an LC case.</li><li>Review compliance result rows.</li><li>Use this before approval or payment processing.</li></ul></div>
+                            <div class="feature-guide-card"><h3><i class="ri-alert-line"></i> Discrepancies</h3><p>Tracks exceptions such as missing documents, late presentation, data mismatch, amount differences, incorrect consignee details or other document inconsistencies.</p><ul><li>Filter discrepancies by severity.</li><li>Focus on critical and major issues first.</li><li>Use this as an exception resolution register.</li></ul></div>
+                            <div class="feature-guide-card"><h3><i class="ri-task-line"></i> Task Management</h3><p>Allows teams to assign operational work related to LC checking, customer follow-up, discrepancy resolution and approvals.</p><ul><li>Create tasks with owner, priority and due date.</li><li>Link a task to an LC case.</li><li>Track status from To Do to Completed.</li></ul></div>
+                            <div class="feature-guide-card"><h3><i class="ri-calendar-line"></i> Calendar</h3><p>Highlights important LC dates like expiry, shipment deadline, document presentation period and operational follow-up events.</p><ul><li>Use it to prevent missed deadlines.</li><li>Review days remaining for each event.</li><li>Prioritise cases with short time remaining.</li></ul></div>
+                            <div class="feature-guide-card"><h3><i class="ri-bar-chart-line"></i> Reports</h3><p>Provides performance and management reporting such as processing rate, revenue, average processing time and variance against target.</p><ul><li>Use reports for management review.</li><li>Track operation efficiency.</li><li>Identify process bottlenecks.</li></ul></div>
+                            <div class="feature-guide-card"><h3><i class="ri-history-line"></i> Audit Trail</h3><p>Records major user actions including created LC cases, tasks and deleted items. This supports traceability and operational control.</p><ul><li>Filter by action type.</li><li>Review who did what and when.</li><li>Use it for internal audit checks.</li></ul></div>
+                            <div class="feature-guide-card"><h3><i class="ri-settings-line"></i> Settings</h3><p>Contains user profile and notification preferences. It is useful for configuring user identity and system behaviour.</p><ul><li>Update user name and email.</li><li>Toggle notification preferences.</li><li>Review basic security preferences.</li></ul></div>
+                            <div class="feature-guide-card"><h3><i class="ri-question-line"></i> Help Icons</h3><p>Every major feature has a small question mark icon. Hover over it to see a short explanation of what the feature does.</p><ul><li>Available on menu items, cards, buttons, headings and labels.</li><li>Works with mouse hover and keyboard focus.</li><li>Useful for new users and training.</li></ul></div>
+                            <div class="feature-guide-card"><h3><i class="ri-search-line"></i> Global Search</h3><p>The search box filters visible table rows by LC number, beneficiary, applicant, bank, status and other visible text.</p><ul><li>Type keywords into the header search box.</li><li>Matching rows remain visible and highlighted.</li><li>Clear the search text to reset the view.</li></ul></div>
+                        </div>
+
+                        <div class="how-to-panel">
+                            <h3 style="margin-bottom: 8px;">Important Notes</h3>
+                            <ul style="color: var(--text-secondary); font-size: 13px; line-height: 1.7; padding-left: 20px;">
+                                <li>This prototype stores information locally in the browser using localStorage.</li>
+                                <li>Uploaded file content is not sent to a server; only file metadata is stored for dashboard tracking.</li>
+                                <li>For production banking use, server-side storage, authentication, audit controls, encryption and approval workflows should be added.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- SETTINGS PAGE -->
+                    <div class="page" id="settings-page" data-page="settings">
+                        <div class="page-header">
+                            <h2 class="page-title">Settings & Configuration</h2>
+                        </div>
+
+                        <div class="cards-grid">
+                            <div class="card">
+                                <h3 style="margin-bottom: 15px; font-weight: 600;">Profile Settings</h3>
+                                <div class="form-group">
+                                    <label class="form-label">User Name</label>
+                                    <input type="text" class="form-control" value="Chief Officer" id="settingsUsername">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" value="officer@bank.com" id="settingsEmail">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Role</label>
+                                    <input type="text" class="form-control" value="Operations Manager" id="settingsRole" readonly>
+                                </div>
+                                <button class="btn btn-primary">Save Settings</button>
+                            </div>
+
+                            <div class="card">
+                                <h3 style="margin-bottom: 15px; font-weight: 600;">Notification Preferences</h3>
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 15px;">
+                                    <input type="checkbox" checked>
+                                    <span>Email Notifications</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 15px;">
+                                    <input type="checkbox" checked>
+                                    <span>Push Notifications</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                    <input type="checkbox" checked>
+                                    <span>Require Password Lock</span>
+                                </label>
+                                <button class="btn btn-secondary">Change PIN</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FOOTER -->
+                <footer class="app-footer">
+                    <div class="footer-content">
+                        <div class="footer-brand">
+                            <i class="ri-code-line"></i>
+                            <span>Powered by Sethu</span>
+                        </div>
+
+                        <div class="footer-disclaimer">
+                            <p><strong>Disclaimer:</strong> This LC Document Checking Dashboard is provided "as is" for demonstration and operational purposes only. While we strive to ensure accuracy and reliability, we do not guarantee complete accuracy of all data displayed. Users are responsible for verifying all critical information before making financial or legal decisions.</p>
+                            
+                            <p><strong>Data Protection:</strong> All data entered in this system is stored locally in your browser. For security purposes, please do not store sensitive financial or personal information. This is a prototype application and should not be used for production-level financial transactions without proper security audits.</p>
+                            
+                            <p><strong>Liability:</strong> We shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of or inability to use the materials or services provided.</p>
+                        </div>
+
+                        <div class="footer-divider"></div>
+
+                        <div class="footer-links">
+                            <a href="#" onclick="showDisclaimer(); return false;">Full Disclaimer</a>
+                            <span>|</span>
+                            <a href="#" onclick="showPrivacy(); return false;">Privacy Policy</a>
+                            <span>|</span>
+                            <a href="#" onclick="showTerms(); return false;">Terms of Service</a>
+                            <span>|</span>
+                            <a href="#" onclick="showAbout(); return false;">About</a>
+                        </div>
+
+                        <div class="footer-copyright">
+                            &copy; 2026 LC Document Checking Dashboard. All rights reserved. Built with <i class="ri-heart-line" style="font-size: 10px; color: var(--danger);"></i> by Sethu
+                        </div>
+                    </div>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Create LC -->
+    <div class="modal-overlay" id="createLCModal">
+        <div class="modal" style="max-width: 900px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Create New Letter of Credit (LC)</h3>
+                <button class="modal-close" id="closeCreateLCModal">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">LC Number *</label>
+                        <input type="text" class="form-control" id="lcNumber" placeholder="e.g., LC/2024/001">
+                        <div class="form-error" id="lcNumberError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Issue Date *</label>
+                        <input type="date" class="form-control" id="lcIssueDate">
+                        <div class="form-error" id="lcIssueDateError"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Issuing Bank *</label>
+                        <input type="text" class="form-control" id="issuingBank" placeholder="e.g., HSBC, Citi, Standard Chartered">
+                        <div class="form-error" id="issuingBankError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Advising Bank *</label>
+                        <input type="text" class="form-control" id="advisingBank">
+                        <div class="form-error" id="advisingBankError"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Applicant *</label>
+                        <input type="text" class="form-control" id="applicant" placeholder="Importer / Buyer Name">
+                        <div class="form-error" id="applicantError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Beneficiary *</label>
+                        <input type="text" class="form-control" id="beneficiary" placeholder="Exporter / Seller Name">
+                        <div class="form-error" id="beneficiaryError"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Amount *</label>
+                        <input type="number" class="form-control" id="lcAmount" placeholder="0.00" step="0.01">
+                        <div class="form-error" id="lcAmountError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Currency *</label>
+                        <select class="form-control" id="currency">
+                            <option value="">Select Currency</option>
+                            <option value="USD">USD - US Dollar</option>
+                            <option value="EUR">EUR - Euro</option>
+                            <option value="GBP">GBP - British Pound</option>
+                            <option value="JPY">JPY - Japanese Yen</option>
+                            <option value="CHF">CHF - Swiss Franc</option>
+                            <option value="SGD">SGD - Singapore Dollar</option>
+                            <option value="AUD">AUD - Australian Dollar</option>
+                        </select>
+                        <div class="form-error" id="currencyError"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Expiry Date *</label>
+                        <input type="date" class="form-control" id="expiryDate">
+                        <div class="form-error" id="expiryDateError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select class="form-control" id="lcStatus">
+                            <option value="draft">Draft</option>
+                            <option value="pending">Pending Review</option>
+                            <option value="approved">Approved</option>
+                            <option value="active">Active</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control" id="lcDescription" rows="3" placeholder="LC description, terms & conditions..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelCreateLCBtn">Cancel</button>
+                <button class="btn btn-primary" id="saveCreateLCBtn">Create LC</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Create Task -->
+    <div class="modal-overlay" id="createTaskModal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Create New Task</h3>
+                <button class="modal-close" id="closeCreateTaskModal">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Task Title *</label>
+                    <input type="text" class="form-control" id="taskTitle" placeholder="Enter task title">
+                    <div class="form-error" id="taskTitleError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control" id="taskDescription" rows="3" placeholder="Task description..."></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Assigned To *</label>
+                        <input type="text" class="form-control" id="taskAssignedTo" placeholder="Team member name">
+                        <div class="form-error" id="taskAssignedToError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Priority *</label>
+                        <select class="form-control" id="taskPriority">
+                            <option value="">Select Priority</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                        <div class="form-error" id="taskPriorityError"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Due Date *</label>
+                        <input type="date" class="form-control" id="taskDueDate">
+                        <div class="form-error" id="taskDueDateError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Related LC Case</label>
+                        <select class="form-control" id="taskRelatedLC">
+                            <option value="">-- No LC --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select class="form-control" id="taskStatus">
+                        <option value="todo">To Do</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelCreateTaskBtn">Cancel</button>
+                <button class="btn btn-primary" id="saveCreateTaskBtn">Create Task</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+    <script src="https://unpkg.com/flatpickr"></script>
+
+    <script>
+        // ==================== APP STATE & STORAGE ====================
+        class AppState {
+            constructor() {
+                this.lcCases = this.loadFromStorage('lcCases') || [];
+                this.tasks = this.loadFromStorage('tasks') || [];
+                this.documents = this.loadFromStorage('documents') || [];
+                this.auditLog = this.loadFromStorage('auditLog') || [];
+            }
+
+            loadFromStorage(key) {
+                try {
+                    const data = localStorage.getItem(key);
+                    return data ? JSON.parse(data) : null;
+                } catch (e) {
+                    console.error('Error loading from storage:', e);
+                    return null;
+                }
+            }
+
+            saveToStorage(key, data) {
+                try {
+                    localStorage.setItem(key, JSON.stringify(data));
+                } catch (e) {
+                    console.error('Error saving to storage:', e);
+                }
+            }
+
+            addLCCase(lcData) {
+                this.lcCases.push(lcData);
+                this.saveToStorage('lcCases', this.lcCases);
+                this.addAuditLog('create', 'LC Case', lcData.lcNumber);
+                return lcData;
+            }
+
+            addTask(taskData) {
+                this.tasks.push(taskData);
+                this.saveToStorage('tasks', this.tasks);
+                this.addAuditLog('create', 'Task', taskData.title);
+                return taskData;
+            }
+            addDocument(documentData) {
+                this.documents.push(documentData);
+                this.saveToStorage('documents', this.documents);
+                this.addAuditLog('upload', 'Document', documentData.fileName);
+                return documentData;
+            }
+
+            addAuditLog(action, entity, details) {
+                const logEntry = {
+                    timestamp: new Date().toISOString(),
+                    user: 'Chief Officer',
+                    action,
+                    entity,
+                    details,
+                    changes: 'Created'
+                };
+                this.auditLog.push(logEntry);
+                this.saveToStorage('auditLog', this.auditLog);
+            }
+
+            getLCCaseCount() {
+                return this.lcCases.length;
+            }
+
+            getPendingLCCount() {
+                return this.lcCases.filter(lc => lc.status === 'pending').length;
+            }
+
+            getApprovedLCCount() {
+                return this.lcCases.filter(lc => lc.status === 'approved').length;
+            }
+        }
+
+        const appState = new AppState();
+
+        // ==================== TOAST NOTIFICATIONS ====================
+        function showToast(message, type = 'info', duration = 3000) {
+            const toastContainer = document.getElementById('toastContainer');
+            const toastId = `toast-${Date.now()}`;
+
+            const toastHTML = `
+                <div class="toast ${type}" id="${toastId}">
+                    <i class="ri-${type === 'success' ? 'check' : type === 'error' ? 'close' : type === 'warning' ? 'alert' : 'info'}-line"></i>
+                    <div class="toast-message">${message}</div>
+                    <button class="toast-close" onclick="document.getElementById('${toastId}').remove();">
+                        <i class="ri-close-line"></i>
+                    </button>
+                </div>
+            `;
+
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+
+            setTimeout(() => {
+                const toast = document.getElementById(toastId);
+                if (toast) {
+                    toast.classList.add('hide');
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, duration);
+        }
+
+        // ==================== FOOTER FUNCTIONS ====================
+        function showDisclaimer() {
+            showToast('Full disclaimer: This is a demonstration application. Please review all terms before use.', 'info', 5000);
+        }
+
+        function showPrivacy() {
+            showToast('Privacy Policy: All data is stored locally in your browser. No data is sent to external servers.', 'info', 5000);
+        }
+
+        function showTerms() {
+            showToast('Terms of Service: By using this application, you agree to use it for lawful purposes only.', 'info', 5000);
+        }
+
+        function showAbout() {
+            showToast('LC Document Checking Dashboard v1.0 - Built by Sethu. A professional trade finance management solution.', 'info', 5000);
+        }
+
+        // ==================== FORM VALIDATION ====================
+        function validateLCForm() {
+            const fields = {
+                lcNumber: { el: document.getElementById('lcNumber'), errorEl: document.getElementById('lcNumberError'), message: 'LC Number is required' },
+                lcIssueDate: { el: document.getElementById('lcIssueDate'), errorEl: document.getElementById('lcIssueDateError'), message: 'Issue Date is required' },
+                issuingBank: { el: document.getElementById('issuingBank'), errorEl: document.getElementById('issuingBankError'), message: 'Issuing Bank is required' },
+                advisingBank: { el: document.getElementById('advisingBank'), errorEl: document.getElementById('advisingBankError'), message: 'Advising Bank is required' },
+                applicant: { el: document.getElementById('applicant'), errorEl: document.getElementById('applicantError'), message: 'Applicant is required' },
+                beneficiary: { el: document.getElementById('beneficiary'), errorEl: document.getElementById('beneficiaryError'), message: 'Beneficiary is required' },
+                lcAmount: { el: document.getElementById('lcAmount'), errorEl: document.getElementById('lcAmountError'), message: 'Amount is required' },
+                currency: { el: document.getElementById('currency'), errorEl: document.getElementById('currencyError'), message: 'Currency is required' },
+                expiryDate: { el: document.getElementById('expiryDate'), errorEl: document.getElementById('expiryDateError'), message: 'Expiry Date is required' }
+            };
+
+            let isValid = true;
+
+            for (const [key, field] of Object.entries(fields)) {
+                const value = field.el.value.trim();
+                if (!value) {
+                    field.el.classList.add('error');
+                    field.errorEl.textContent = field.message;
+                    field.errorEl.classList.add('show');
+                    isValid = false;
+                } else {
+                    field.el.classList.remove('error');
+                    field.errorEl.classList.remove('show');
+                }
+            }
+
+            return isValid;
+        }
+
+        function validateTaskForm() {
+            const fields = {
+                taskTitle: { el: document.getElementById('taskTitle'), errorEl: document.getElementById('taskTitleError'), message: 'Task Title is required' },
+                taskAssignedTo: { el: document.getElementById('taskAssignedTo'), errorEl: document.getElementById('taskAssignedToError'), message: 'Assigned To is required' },
+                taskPriority: { el: document.getElementById('taskPriority'), errorEl: document.getElementById('taskPriorityError'), message: 'Priority is required' },
+                taskDueDate: { el: document.getElementById('taskDueDate'), errorEl: document.getElementById('taskDueDateError'), message: 'Due Date is required' }
+            };
+
+            let isValid = true;
+
+            for (const [key, field] of Object.entries(fields)) {
+                const value = field.el.value.trim();
+                if (!value) {
+                    field.el.classList.add('error');
+                    field.errorEl.textContent = field.message;
+                    field.errorEl.classList.add('show');
+                    isValid = false;
+                } else {
+                    field.el.classList.remove('error');
+                    field.errorEl.classList.remove('show');
+                }
+            }
+
+            return isValid;
+        }
+
+        // ==================== MODAL FUNCTIONS ====================
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        function resetLCForm() {
+            document.getElementById('lcNumber').value = '';
+            document.getElementById('lcIssueDate').value = '';
+            document.getElementById('issuingBank').value = '';
+            document.getElementById('advisingBank').value = '';
+            document.getElementById('applicant').value = '';
+            document.getElementById('beneficiary').value = '';
+            document.getElementById('lcAmount').value = '';
+            document.getElementById('currency').value = '';
+            document.getElementById('expiryDate').value = '';
+            document.getElementById('lcStatus').value = 'draft';
+            document.getElementById('lcDescription').value = '';
+
+            const errorElements = document.querySelectorAll('#createLCModal .form-error');
+            errorElements.forEach(el => {
+                el.classList.remove('show');
+                el.textContent = '';
+            });
+            document.querySelectorAll('#createLCModal .form-control').forEach(el => {
+                el.classList.remove('error');
+            });
+        }
+
+        function resetTaskForm() {
+            document.getElementById('taskTitle').value = '';
+            document.getElementById('taskDescription').value = '';
+            document.getElementById('taskAssignedTo').value = '';
+            document.getElementById('taskPriority').value = '';
+            document.getElementById('taskDueDate').value = '';
+            document.getElementById('taskRelatedLC').value = '';
+            document.getElementById('taskStatus').value = 'todo';
+
+            const errorElements = document.querySelectorAll('#createTaskModal .form-error');
+            errorElements.forEach(el => {
+                el.classList.remove('show');
+                el.textContent = '';
+            });
+            document.querySelectorAll('#createTaskModal .form-control').forEach(el => {
+                el.classList.remove('error');
+            });
+        }
+
+        // ==================== LC CASE FUNCTIONS ====================
+        function saveLCCase() {
+            if (!validateLCForm()) {
+                showToast('Please fill in all required fields', 'error');
+                return;
+            }
+
+            const lcNumber = document.getElementById('lcNumber').value.trim();
+            if (appState.lcCases.some(lc => lc.lcNumber === lcNumber)) {
+                showToast('LC Number already exists', 'error');
+                return;
+            }
+
+            const lcData = {
+                id: Date.now(),
+                lcNumber: document.getElementById('lcNumber').value.trim(),
+                issueDate: document.getElementById('lcIssueDate').value,
+                issuingBank: document.getElementById('issuingBank').value.trim(),
+                advisingBank: document.getElementById('advisingBank').value.trim(),
+                applicant: document.getElementById('applicant').value.trim(),
+                beneficiary: document.getElementById('beneficiary').value.trim(),
+                amount: parseFloat(document.getElementById('lcAmount').value),
+                currency: document.getElementById('currency').value,
+                expiryDate: document.getElementById('expiryDate').value,
+                status: document.getElementById('lcStatus').value,
+                description: document.getElementById('lcDescription').value.trim(),
+                createdAt: new Date().toISOString()
+            };
+
+            appState.addLCCase(lcData);
+            showToast(`LC Case "${lcData.lcNumber}" created successfully!`, 'success');
+            
+            closeModal('createLCModal');
+            resetLCForm();
+            
+            updateDashboard();
+            renderLCCasesTable();
+            updateLCSelects();
+        }
+
+        // ==================== TASK FUNCTIONS ====================
+        function saveTask() {
+            if (!validateTaskForm()) {
+                showToast('Please fill in all required fields', 'error');
+                return;
+            }
+
+            const taskData = {
+                id: Date.now(),
+                title: document.getElementById('taskTitle').value.trim(),
+                description: document.getElementById('taskDescription').value.trim(),
+                assignedTo: document.getElementById('taskAssignedTo').value.trim(),
+                priority: document.getElementById('taskPriority').value,
+                dueDate: document.getElementById('taskDueDate').value,
+                relatedLC: document.getElementById('taskRelatedLC').value,
+                status: document.getElementById('taskStatus').value,
+                createdAt: new Date().toISOString()
+            };
+
+            appState.addTask(taskData);
+            showToast(`Task "${taskData.title}" created successfully!`, 'success');
+            
+            closeModal('createTaskModal');
+            resetTaskForm();
+            
+            renderTasksTable();
+            updateDashboard();
+        }
+
+        // ==================== RENDER FUNCTIONS ====================
+        function renderLCCasesTable() {
+            const tbody = document.getElementById('lcCasesTable');
+            
+            if (appState.lcCases.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center" style="padding: 40px;">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><i class="ri-file-list-line"></i></div>
+                                <div class="empty-state-title">No LC Cases</div>
+                                <div class="empty-state-text">Create a new LC case to begin</div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = appState.lcCases.map(lc => `
+                <tr>
+                    <td><strong>${lc.lcNumber}</strong></td>
+                    <td>${lc.applicant}</td>
+                    <td>${lc.beneficiary}</td>
+                    <td>${lc.currency} ${lc.amount.toLocaleString()}</td>
+                    <td>${lc.currency}</td>
+                    <td>${new Date(lc.expiryDate).toLocaleDateString()}</td>
+                    <td><span class="badge badge-${lc.status === 'approved' ? 'success' : lc.status === 'pending' ? 'warning' : 'success'}">${lc.status.toUpperCase()}</span></td>
+                    <td>
+                        <button class="btn btn-small" onclick="editLCCase(${lc.id})" title="Edit">
+                            <i class="ri-edit-line"></i>
+                        </button>
+                        <button class="btn btn-small" onclick="deleteLCCase(${lc.id})" title="Delete">
+                            <i class="ri-delete-bin-line"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderTasksTable() {
+            const tbody = document.getElementById('tasksTable');
+            
+            if (appState.tasks.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center" style="padding: 40px;">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><i class="ri-task-line"></i></div>
+                                <div class="empty-state-title">No Tasks</div>
+                                <div class="empty-state-text">Create your first task to get started</div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = appState.tasks.map(task => `
+                <tr>
+                    <td>${task.title}</td>
+                    <td>${task.assignedTo}</td>
+                    <td><span class="badge badge-${task.priority === 'high' ? 'danger' : task.priority === 'medium' ? 'warning' : 'success'}">${task.priority.toUpperCase()}</span></td>
+                    <td>${new Date(task.dueDate).toLocaleDateString()}</td>
+                    <td><span class="badge badge-${task.status === 'completed' ? 'success' : task.status === 'in-progress' ? 'warning' : 'danger'}">${task.status.toUpperCase()}</span></td>
+                    <td>${task.relatedLC || 'N/A'}</td>
+                    <td>
+                        <button class="btn btn-small" onclick="editTask(${task.id})" title="Edit">
+                            <i class="ri-edit-line"></i>
+                        </button>
+                        <button class="btn btn-small" onclick="deleteTask(${task.id})" title="Delete">
+                            <i class="ri-delete-bin-line"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderRecentLCTable() {
+            const tbody = document.getElementById('recentLCTable');
+            const recent = appState.lcCases.slice(-5).reverse();
+            
+            if (recent.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center" style="padding: 40px;">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><i class="ri-inbox-line"></i></div>
+                                <div class="empty-state-title">No LC Cases Yet</div>
+                                <div class="empty-state-text">Create your first LC case to get started</div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = recent.map(lc => `
+                <tr>
+                    <td><strong>${lc.lcNumber}</strong></td>
+                    <td>${lc.beneficiary}</td>
+                    <td>${lc.currency} ${lc.amount.toLocaleString()}</td>
+                    <td><span class="badge badge-${lc.status === 'approved' ? 'success' : lc.status === 'pending' ? 'warning' : 'success'}">${lc.status.toUpperCase()}</span></td>
+                    <td><span class="badge">3/5</span></td>
+                    <td><span class="badge badge-${lc.status === 'approved' ? 'success' : 'warning'}">PENDING</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // ==================== UPDATE FUNCTIONS ====================
+        function updateDashboard() {
+            const totalCount = appState.getLCCaseCount();
+            const pendingCount = appState.getPendingLCCount();
+            const approvedCount = appState.getApprovedLCCount();
+
+            document.getElementById('totalLCCount').textContent = totalCount;
+            document.getElementById('pendingCount').textContent = pendingCount;
+            document.getElementById('approvedCount').textContent = approvedCount;
+            document.getElementById('discrepancyCount').textContent = '0';
+
+            renderRecentLCTable();
+            updateCharts();
+        }
+
+        function updateLCSelects() {
+            const selects = [
+                document.getElementById('taskRelatedLC'),
+                document.getElementById('docLCSelect'),
+                document.getElementById('complianceLCSelect')
+            ];
+
+            selects.forEach(select => {
+                if (select) {
+                    const currentValue = select.value;
+                    select.innerHTML = '<option value="">-- Select LC Case --</option>';
+                    appState.lcCases.forEach(lc => {
+                        const option = document.createElement('option');
+                        option.value = lc.lcNumber;
+                        option.textContent = `${lc.lcNumber} - ${lc.beneficiary}`;
+                        select.appendChild(option);
+                    });
+                    select.value = currentValue;
+                }
+            });
+        }
+
+        function updateCharts() {
+            if (typeof Chart === 'undefined') {
+                console.warn('Charts skipped because Chart.js did not load. Uploads and document management remain available.');
+                return;
+            }
+
+            const statusCtx = document.getElementById('statusChart');
+            if (statusCtx && statusCtx.chart) {
+                statusCtx.chart.destroy();
+            }
+
+            if (statusCtx) {
+                statusCtx.chart = new Chart(statusCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Approved', 'Pending', 'Draft'],
+                        datasets: [{
+                            data: [
+                                appState.getApprovedLCCount(),
+                                appState.getPendingLCCount(),
+                                appState.lcCases.filter(lc => lc.status === 'draft').length
+                            ],
+                            backgroundColor: ['#10b981', '#f59e0b', '#e5e7eb']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+            }
+
+            const completionCtx = document.getElementById('completionChart');
+            if (completionCtx && completionCtx.chart) {
+                completionCtx.chart.destroy();
+            }
+
+            if (completionCtx) {
+                completionCtx.chart = new Chart(completionCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                        datasets: [{
+                            label: 'Completion %',
+                            data: [75, 80, 85, 90],
+                            backgroundColor: '#0066cc'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: true }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, max: 100 }
+                        }
+                    }
+                });
+            }
+        }
+
+        function editLCCase(id) {
+            showToast('Edit feature coming soon', 'info');
+        }
+
+        function deleteLCCase(id) {
+            if (confirm('Are you sure you want to delete this LC Case?')) {
+                appState.lcCases = appState.lcCases.filter(lc => lc.id !== id);
+                appState.saveToStorage('lcCases', appState.lcCases);
+                appState.addAuditLog('delete', 'LC Case', 'Deleted');
+                showToast('LC Case deleted successfully', 'success');
+                updateDashboard();
+                renderLCCasesTable();
+                updateLCSelects();
+            }
+        }
+
+        function editTask(id) {
+            showToast('Edit feature coming soon', 'info');
+        }
+
+        function deleteTask(id) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                appState.tasks = appState.tasks.filter(task => task.id !== id);
+                appState.saveToStorage('tasks', appState.tasks);
+                appState.addAuditLog('delete', 'Task', 'Deleted');
+                showToast('Task deleted successfully', 'success');
+                renderTasksTable();
+            }
+        }
+
+
+        // ==================== DOCUMENT UPLOAD - DRAG & DROP FIX ====================
+        // Optional enhancement hooks. They are defined as safe no-ops so missing
+        // future widgets cannot stop core navigation/buttons/uploads.
+        function updateExecutiveInsights() {
+            // Reserved for future KPI refresh logic.
+        }
+        function attachFeatureHelp() {
+            // Reserved for future tooltip/help binding logic.
+        }
+
+        function formatFileSize(bytes) {
+            if (!bytes && bytes !== 0) return 'N/A';
+            const units = ['B', 'KB', 'MB', 'GB'];
+            let size = bytes;
+            let unitIndex = 0;
+            while (size >= 1024 && unitIndex < units.length - 1) {
+                size /= 1024;
+                unitIndex++;
+            }
+            return `${size.toFixed(size >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+        }
+        function detectDocumentCategory(fileName) {
+            const name = fileName.toLowerCase();
+            if (name.includes('invoice')) return 'Commercial Invoice';
+            if (name.includes('packing')) return 'Packing List';
+            if (name.includes('bill') || name.includes('bol') || name.includes('bl')) return 'Bill of Lading';
+            if (name.includes('insurance')) return 'Insurance Certificate';
+            if (name.includes('origin')) return 'Certificate of Origin';
+            if (name.endsWith('.pdf')) return 'PDF Document';
+            if (name.endsWith('.xls') || name.endsWith('.xlsx')) return 'Spreadsheet';
+            if (name.endsWith('.doc') || name.endsWith('.docx')) return 'Word Document';
+            if (name.match(/\.(png|jpg|jpeg|gif|webp)$/)) return 'Image Document';
+            return 'Supporting Document';
+        }
+        function handleDocumentFiles(fileList) {
+            const files = Array.from(fileList || []);
+            if (!files.length) return;
+            const selectedLC = document.getElementById('docLCSelect')?.value || '';
+            if (!selectedLC) {
+                showToast('Please select an LC Case before uploading documents.', 'warning', 4000);
+                return;
+            }
+            files.forEach(file => {
+                appState.addDocument({
+                    id: Date.now() + Math.random(),
+                    lcNumber: selectedLC,
+                    fileName: file.name,
+                    category: detectDocumentCategory(file.name),
+                    uploadDate: new Date().toISOString(),
+                    fileSize: file.size,
+                    status: 'Uploaded',
+                    version: 'v1.0',
+                    type: file.type || 'Unknown'
+                });
+            });
+            renderDocumentsTable();
+            updateExecutiveInsights();
+            showToast(`${files.length} document(s) uploaded successfully.`, 'success');
+        }
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+        function escapeAttribute(value) {
+            return escapeHtml(value).replace(/`/g, '&#96;');
+        }
+
+        function renderDocumentsTable() {
+            const tbody = document.getElementById('documentsTable');
+            if (!tbody) return;
+            const selectedLC = document.getElementById('docLCSelect')?.value || '';
+            const documents = selectedLC ? appState.documents.filter(doc => doc.lcNumber === selectedLC) : appState.documents;
+            if (!documents.length) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center" style="padding: 40px;">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><i class="ri-file-upload-line"></i></div>
+                                <div class="empty-state-title">No Documents Uploaded</div>
+                                <div class="empty-state-text">Select an LC case and drag files into the upload zone.</div>
+                            </div>
+                        </td>
+                    </tr>`;
+                return;
+            }
+            tbody.innerHTML = documents.slice().reverse().map(doc => {
+                const docId = escapeAttribute(doc.id);
+                return `
+                <tr>
+                    <td><strong>${escapeHtml(doc.fileName)}</strong><br><small style="color: var(--text-secondary);">${escapeHtml(doc.lcNumber)}</small></td>
+                    <td>${escapeHtml(doc.category)}</td>
+                    <td>${new Date(doc.uploadDate).toLocaleString()}</td>
+                    <td>${formatFileSize(doc.fileSize)}</td>
+                    <td><span class="badge badge-success">${escapeHtml(doc.status)}</span></td>
+                    <td>${escapeHtml(doc.version)}</td>
+                    <td>
+                        <button type="button" class="btn btn-small" onclick="showToast('Preview is not available in this local prototype.', 'info')" title="Preview"><i class="ri-eye-line"></i></button>
+                        <button type="button" class="btn btn-small document-delete-btn" data-document-id="${docId}" title="Delete"><i class="ri-delete-bin-line"></i></button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+        function deleteDocument(id) {
+            const documentId = String(id ?? '');
+            if (!documentId) {
+                showToast('Unable to identify the document to delete.', 'error');
+                return;
+            }
+            const doc = appState.documents.find(item => String(item.id) === documentId);
+            const label = doc ? `"${doc.fileName}"` : 'this uploaded document record';
+            if (!confirm(`Are you sure you want to remove ${label}?`)) return;
+            const beforeCount = appState.documents.length;
+            appState.documents = appState.documents.filter(item => String(item.id) !== documentId);
+            if (appState.documents.length === beforeCount) {
+                showToast('Document record was not found. Refreshing the document list.', 'warning');
+                renderDocumentsTable();
+                return;
+            }
+            appState.saveToStorage('documents', appState.documents);
+            appState.addAuditLog('delete', 'Document', doc ? doc.fileName : 'Deleted document record');
+            renderDocumentsTable();
+            if (typeof updateExecutiveInsights === 'function') updateExecutiveInsights();
+            showToast('Document record removed.', 'success');
+        }
+        function setupDocumentUpload() {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+            const lcSelect = document.getElementById('docLCSelect');
+            if (!dropZone || !fileInput) return;
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.add('drag-over', 'active');
+                });
+            });
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.remove('drag-over', 'active');
+                });
+            });
+            dropZone.addEventListener('drop', function(e) {
+                handleDocumentFiles(e.dataTransfer.files);
+            });
+            dropZone.addEventListener('click', function() {
+                fileInput.click();
+            });
+            fileInput.addEventListener('change', function() {
+                handleDocumentFiles(fileInput.files);
+                fileInput.value = '';
+            });
+            if (lcSelect) {
+                lcSelect.addEventListener('change', renderDocumentsTable);
+            }
+            renderDocumentsTable();
+        }
+
+
+        // ==================== ROBUST DOCUMENT UPLOAD FIX V2 ====================
+        function showDocumentUploadError(message) {
+            const errorBox = document.getElementById('documentUploadError');
+            if (errorBox) {
+                errorBox.textContent = message;
+                errorBox.classList.add('show');
+                setTimeout(() => errorBox.classList.remove('show'), 9000);
+            }
+            if (typeof showToast === 'function') showToast(message, 'warning', 4500);
+        }
+
+        function getUploadLCNumber() {
+            const selected = document.getElementById('docLCSelect')?.value || '';
+            return selected || 'UNASSIGNED';
+        }
+
+        const ALLOWED_UPLOAD_EXTENSIONS = ['pdf','png','jpg','jpeg','gif','webp','doc','docx','xls','xlsx','csv','txt'];
+        const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB
+
+        function formatBytes(bytes) {
+            if (!bytes && bytes !== 0) return 'unknown size';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        function validateUploadFile(file) {
+            if (!file) return 'File is missing or unreadable.';
+            if (typeof file.size === 'number' && file.size === 0) return 'File is empty (0 bytes).';
+            if (typeof file.size === 'number' && file.size > MAX_UPLOAD_BYTES) {
+                return `Exceeds the 10 MB size limit (file is ${formatBytes(file.size)}).`;
+            }
+            const name = file.name || '';
+            const dot = name.lastIndexOf('.');
+            const ext = dot >= 0 ? name.slice(dot + 1).toLowerCase() : '';
+            if (!ext) return 'File has no extension, so its type cannot be verified.';
+            if (!ALLOWED_UPLOAD_EXTENSIONS.includes(ext)) {
+                return `Unsupported file type ".${ext}". Allowed: ${ALLOWED_UPLOAD_EXTENSIONS.join(', ')}.`;
+            }
+            return null;
+        }
+
+        function handleDocumentFilesV2(fileList) {
+            const files = Array.from(fileList || []);
+            if (!files.length) {
+                showDocumentUploadError('No files were selected. Click Browse Files or drag files onto the upload area to choose files from your computer.');
+                return;
+            }
+            if (!appState.documents) appState.documents = [];
+            const lcNumber = getUploadLCNumber();
+            const accepted = [];
+            const rejected = [];
+            files.forEach(file => {
+                const reason = validateUploadFile(file);
+                if (reason) {
+                    rejected.push({ name: file.name || '(unnamed file)', reason });
+                } else {
+                    accepted.push(file);
+                }
+            });
+
+            accepted.forEach(file => {
+                try {
+                    const documentData = {
+                        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                        lcNumber,
+                        fileName: file.name,
+                        category: typeof detectDocumentCategory === 'function' ? detectDocumentCategory(file.name) : 'Supporting Document',
+                        uploadDate: new Date().toISOString(),
+                        fileSize: file.size,
+                        status: lcNumber === 'UNASSIGNED' ? 'Uploaded - Unassigned' : 'Uploaded',
+                        version: 'v1.0',
+                        type: file.type || 'Unknown'
+                    };
+                    if (typeof appState.addDocument === 'function') {
+                        appState.addDocument(documentData);
+                    } else {
+                        appState.documents.push(documentData);
+                        appState.saveToStorage('documents', appState.documents);
+                        appState.addAuditLog('upload', 'Document', documentData.fileName);
+                    }
+                } catch (err) {
+                    console.error('Upload failed for', file.name, err);
+                    rejected.push({ name: file.name, reason: `Save failed: ${err && err.message ? err.message : 'unknown error'}.` });
+                }
+            });
+
+            if (typeof renderDocumentsTable === 'function') renderDocumentsTable();
+            if (typeof updateExecutiveInsights === 'function') updateExecutiveInsights();
+            if (typeof attachFeatureHelp === 'function') attachFeatureHelp();
+
+            if (rejected.length) {
+                const summary = rejected.map(r => `• ${r.name}: ${r.reason}`).join('\n');
+                showDocumentUploadError(
+                    `${rejected.length} file(s) could not be uploaded:\n${summary}`
+                );
+            }
+            if (accepted.length) {
+                const assignmentNote = lcNumber === 'UNASSIGNED' ? ' as Unassigned' : ` for ${lcNumber}`;
+                showToast(`${accepted.length} document(s) uploaded${assignmentNote}.`, 'success', 3500);
+            } else if (!rejected.length) {
+                showDocumentUploadError('No files were processed. Please try selecting files again.');
+            }
+        }
+
+
+        function setupDocumentUploadV2() {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+            const browseBtn = document.getElementById('browseFilesBtn');
+            const clearBtn = document.getElementById('clearDocumentFilterBtn');
+            const lcSelect = document.getElementById('docLCSelect');
+            if (!dropZone || !fileInput || dropZone.dataset.uploadInitialized === 'true') return;
+            dropZone.dataset.uploadInitialized = 'true';
+            dropZone.classList.add('upload-ready');
+
+            // Prevent dropped files from opening in the browser, without blocking normal clicks.
+            window.addEventListener('dragover', function(e) { e.preventDefault(); }, false);
+            window.addEventListener('drop', function(e) { e.preventDefault(); }, false);
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.add('drag-over', 'active');
+                }, false);
+            });
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.remove('drag-over', 'active');
+                }, false);
+            });
+            dropZone.addEventListener('drop', function(e) {
+                const files = e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files : [];
+                handleDocumentFilesV2(files);
+            }, false);
+            dropZone.addEventListener('click', function(e) {
+                if (e.target.closest('#browseFilesBtn') || e.target.closest('#clearDocumentFilterBtn')) return;
+                fileInput.click();
+            }, false);
+            if (browseBtn) {
+                browseBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    fileInput.click();
+                }, false);
+                browseBtn.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        fileInput.click();
+                    }
+                }, false);
+            }
+            fileInput.addEventListener('change', function() {
+                handleDocumentFilesV2(fileInput.files);
+                fileInput.value = '';
+            }, false);
+            if (lcSelect) {
+                lcSelect.addEventListener('change', renderDocumentsTable, false);
+            }
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (lcSelect) lcSelect.value = '';
+                    renderDocumentsTable();
+                    showToast('Showing all uploaded documents.', 'info', 2500);
+                }, false);
+            }
+            renderDocumentsTable();
+        }
+
+        // ==================== EVENT LISTENERS ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                // Attach the upload handlers first so document upload still works even if another widget fails later.
+                // NOTE: setupDocumentUpload() (V1) is intentionally disabled.
+                // Running both V1 and V2 double-bound the fileInput change handler:
+                // V1 processed files then cleared fileInput.value, causing V2's
+                // subsequent change handler to see an empty FileList and show
+                // "No files were selected". Only V2 is needed.
+                setupDocumentUploadV2();
+
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.addEventListener('click', function() {
+                        const pageId = this.getAttribute('data-page');
+                        navigateToPage(pageId);
+                    });
+                });
+
+                document.getElementById('createLCBtn')?.addEventListener('click', function() {
+                    resetLCForm();
+                    openModal('createLCModal');
+                });
+
+                document.getElementById('createLCBtn2')?.addEventListener('click', function() {
+                    resetLCForm();
+                    openModal('createLCModal');
+                });
+
+                document.getElementById('createTaskBtn')?.addEventListener('click', function() {
+                    resetTaskForm();
+                    populateTaskRelatedLC();
+                    openModal('createTaskModal');
+                });
+
+                document.getElementById('closeCreateLCModal')?.addEventListener('click', function() {
+                    closeModal('createLCModal');
+                });
+
+                document.getElementById('closeCreateTaskModal')?.addEventListener('click', function() {
+                    closeModal('createTaskModal');
+                });
+
+                document.getElementById('cancelCreateLCBtn')?.addEventListener('click', function() {
+                    closeModal('createLCModal');
+                });
+
+                document.getElementById('cancelCreateTaskBtn')?.addEventListener('click', function() {
+                    closeModal('createTaskModal');
+                });
+
+                document.getElementById('saveCreateLCBtn')?.addEventListener('click', saveLCCase);
+                document.getElementById('saveCreateTaskBtn')?.addEventListener('click', saveTask);
+
+                document.getElementById('createLCModal')?.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closeModal('createLCModal');
+                    }
+                });
+
+                document.getElementById('createTaskModal')?.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closeModal('createTaskModal');
+                    }
+                });
+
+                document.getElementById('themeToggle')?.addEventListener('click', function() {
+                    document.documentElement.classList.toggle('dark-mode');
+                    localStorage.setItem('theme', document.documentElement.classList.contains('dark-mode') ? 'dark' : 'light');
+                });
+
+                document.getElementById('toggleSidebar')?.addEventListener('click', function() {
+                    document.getElementById('sidebar')?.classList.toggle('collapsed');
+                });
+
+                updateLCSelects();
+                updateDashboard();
+                renderLCCasesTable();
+                renderTasksTable();
+
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme === 'dark') {
+                    document.documentElement.classList.add('dark-mode');
+                }
+            } catch (err) {
+                console.error('Dashboard initialization failed:', err);
+                showDocumentUploadError(`Page initialization issue: ${err && err.message ? err.message : 'unknown error'}. Document upload controls were initialized first; please try uploading again.`);
+            }
+        });
+
+        // Delegated click handler keeps dynamically-created document action buttons clickable.
+        document.addEventListener('click', function(e) {
+            const deleteBtn = e.target.closest('.document-delete-btn');
+            if (deleteBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                deleteDocument(deleteBtn.dataset.documentId);
+            }
+        }, false);
+
+        function navigateToPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(`${pageId}-page`).classList.add('active');
+
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
+
+            const pageTitle = pageId.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+            document.getElementById('headerTitle').textContent = pageTitle;
+        }
+
+        function populateTaskRelatedLC() {
+            const select = document.getElementById('taskRelatedLC');
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">-- No LC --</option>';
+            appState.lcCases.forEach(lc => {
+                const option = document.createElement('option');
+                option.value = lc.lcNumber;
+                option.textContent = `${lc.lcNumber} - ${lc.beneficiary}`;
+                select.appendChild(option);
+            });
+            select.value = currentValue;
+        }
+    </script>
+</body>
+</html>
