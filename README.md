@@ -1,4 +1,4 @@
-# Meridian LC — Document Compliance Desk
+# Rakesh LC — Document Compliance Desk
 
 A single-file, offline-capable Letter of Credit (LC) document checking dashboard for trade finance officers, exporters, importers, freight forwarders, and banks. Verifies that presented documents comply with LC terms before presentation to the bank.
 
