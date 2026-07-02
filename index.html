@@ -1,0 +1,1809 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TaxVault — Indian ITR Checklist, Documents & Tax Estimation</title>
+<meta name="description" content="Offline personal Indian income tax filing checklist, document vault and tax estimation dashboard. Works entirely in your browser." />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script>if(window['pdfjsLib'])pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';</script>
+<style>
+:root{
+  --bg:#0b1020; --panel:#121833; --panel2:#171f43; --line:#243066;
+  --txt:#e7ecff; --mut:#9aa6d6; --pri:#6b8afd; --pri2:#8b5cf6;
+  --ok:#22c55e; --warn:#f59e0b; --err:#ef4444; --info:#06b6d4;
+  --radius:14px; --shadow:0 10px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:linear-gradient(180deg,#0a0f25,#0b1020 60%);color:var(--txt);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;font-size:14px;line-height:1.45}
+a{color:var(--pri)}
+button{font-family:inherit}
+.hidden{display:none!important}
+.app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+aside{background:var(--panel);border-right:1px solid var(--line);padding:18px;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{display:flex;gap:10px;align-items:center;font-weight:700;font-size:18px;margin-bottom:18px}
+.brand .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--pri),var(--pri2));display:grid;place-items:center;color:white;font-weight:800}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav button{display:flex;gap:10px;align-items:center;background:transparent;color:var(--txt);border:1px solid transparent;padding:10px 12px;border-radius:10px;text-align:left;cursor:pointer}
+.nav button:hover{background:var(--panel2)}
+.nav button.active{background:linear-gradient(135deg,rgba(107,138,253,.18),rgba(139,92,246,.18));border-color:var(--line)}
+.nav small{color:var(--mut);text-transform:uppercase;letter-spacing:.08em;font-size:11px;margin:14px 6px 6px}
+main{padding:22px 28px;max-width:100%}
+.topbar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap}
+.topbar h1{margin:0;font-size:22px}
+.fy{display:flex;gap:8px;align-items:center}
+select,input,textarea{background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:8px 10px;outline:none}
+select:focus,input:focus,textarea:focus{border-color:var(--pri)}
+.btn{background:var(--pri);color:white;border:0;padding:9px 14px;border-radius:10px;cursor:pointer;font-weight:600}
+.btn.secondary{background:var(--panel2);color:var(--txt);border:1px solid var(--line)}
+.btn.danger{background:var(--err)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--txt)}
+.btn.sm{padding:6px 10px;font-size:12px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.card h4{margin:0 0 6px;font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em}
+.card .v{font-size:22px;font-weight:700}
+.card .sub{color:var(--mut);font-size:12px;margin-top:4px}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.section{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-top:16px}
+.section h3{margin:0 0 12px;font-size:15px}
+.prog{height:10px;background:var(--panel2);border-radius:99px;overflow:hidden}
+.prog>span{display:block;height:100%;background:linear-gradient(90deg,var(--pri),var(--pri2))}
+.tag{display:inline-block;background:var(--panel2);border:1px solid var(--line);color:var(--mut);font-size:11px;padding:2px 8px;border-radius:99px;margin-right:4px}
+.status{font-size:11px;padding:3px 8px;border-radius:99px;font-weight:600}
+.status.missing{background:rgba(239,68,68,.15);color:#fca5a5}
+.status.pending{background:rgba(245,158,11,.15);color:#fcd34d}
+.status.uploaded{background:rgba(6,182,212,.15);color:#67e8f9}
+.status.verified{background:rgba(34,197,94,.18);color:#86efac}
+.status.submitted{background:rgba(139,92,246,.18);color:#c4b5fd}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}
+th{color:var(--mut);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.drop{border:2px dashed var(--line);border-radius:var(--radius);padding:24px;text-align:center;color:var(--mut);transition:.2s}
+.drop.hot{border-color:var(--pri);background:rgba(107,138,253,.08);color:var(--txt)}
+.cat{display:flex;justify-content:space-between;align-items:center;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);margin-bottom:6px}
+.modal{position:fixed;inset:0;background:rgba(3,6,20,.7);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+.modal.show{display:flex}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);max-width:720px;width:100%;max-height:90vh;overflow:auto;padding:20px}
+.kv{display:grid;grid-template-columns:200px 1fr;gap:8px 12px;align-items:center}
+.kv input,.kv select{width:100%}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--panel);border:1px solid var(--line);padding:12px 16px;border-radius:10px;box-shadow:var(--shadow);z-index:100;animation:slide .3s}
+@keyframes slide{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.lock{position:fixed;inset:0;background:#0a0f25;display:grid;place-items:center;z-index:200}
+.lock .box{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:30px;max-width:380px;width:100%;text-align:center}
+.warn{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.4);padding:12px;border-radius:10px;color:#fcd34d;font-size:13px;margin-top:12px}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;font-size:12px;color:var(--mut)}
+canvas{max-width:100%}
+@media(max-width:880px){
+  .app{grid-template-columns:1fr}
+  aside{position:relative;height:auto}
+  .grid2{grid-template-columns:1fr}
+  .kv{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div id="lock" class="lock hidden">
+  <div class="box">
+    <div style="font-size:36px;margin-bottom:8px">🔒</div>
+    <h2 style="margin:0 0 6px">TaxVault Locked</h2>
+    <p style="color:var(--mut);margin:0 0 14px">Enter your PIN to continue</p>
+    <input id="pinInput" type="password" placeholder="PIN" style="width:100%;margin-bottom:10px;text-align:center;font-size:18px" />
+    <button class="btn" style="width:100%" onclick="tryUnlock()">Unlock</button>
+    <p id="pinHint" style="color:var(--mut);font-size:12px;margin-top:12px">First time? Choose a PIN to set it.</p>
+  </div>
+</div>
+
+<div class="app" id="app">
+  <aside>
+    <div class="brand"><div class="logo">₹</div> TaxVault</div>
+    <div class="nav" id="nav">
+      <small>Workspace</small>
+      <button data-tab="dashboard" class="active">📊 Dashboard</button>
+      <button data-tab="checklist">✅ Checklist</button>
+      <button data-tab="documents">📁 Documents</button>
+      <button data-tab="tax">🧮 Tax Computation</button>
+      <button data-tab="calculators">🧰 Calculators</button>
+      <button data-tab="reports">📑 Reports</button>
+      <button data-tab="reminders">⏰ Reminders</button>
+      <small>Manage</small>
+      <button data-tab="years">📅 Financial Years</button>
+      <button data-tab="settings">⚙️ Settings</button>
+    </div>
+    <div style="margin-top:18px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)">
+      <div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em">Disclaimer</div>
+      <div style="font-size:11px;color:var(--mut);margin-top:6px">All calculations are estimates. Verify before filing. Not a substitute for a Chartered Accountant.</div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <h1 id="pageTitle">Dashboard</h1>
+      <div class="fy">
+        <label style="color:var(--mut);font-size:12px">FY</label>
+        <select id="fySelect"></select>
+        <label style="color:var(--mut);font-size:12px;margin-left:8px" title="Residential status affects checklist items, deductions, rebate 87A and taxability of foreign income">Residency</label>
+        <select id="residency" onchange="setResidency(this.value)">
+          <option value="ROR">Resident (ROR)</option>
+          <option value="RNOR">Resident but Not Ordinarily Resident (RNOR)</option>
+          <option value="NRI">Non-Resident (NRI)</option>
+        </select>
+        <button class="btn secondary sm" onclick="showTab('years')">Manage</button>
+        <button class="btn sm" onclick="lockNow()">🔒 Lock</button>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <section id="tab-dashboard" class="tab">
+      <div class="cards" id="dashCards"></div>
+      <div class="grid2" style="margin-top:16px">
+        <div class="section">
+          <h3>Income vs Deductions vs Tax (Estimated)</h3>
+          <canvas id="chartBar" height="180"></canvas>
+        </div>
+        <div class="section">
+          <h3>Document Status</h3>
+          <canvas id="chartDoc" height="180"></canvas>
+        </div>
+      </div>
+      <div class="section">
+        <h3>Recent Activity</h3>
+        <div id="recent"></div>
+      </div>
+      <div class="warn">⚠️ Tax estimates are based only on what you enter or upload. Always verify on the official Income Tax e-Filing Portal before submitting your ITR.</div>
+    </section>
+
+    <!-- CHECKLIST -->
+    <section id="tab-checklist" class="tab hidden">
+      <div class="section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div>
+            <div style="font-size:12px;color:var(--mut)">Filing Readiness</div>
+            <div id="readyPct" style="font-size:28px;font-weight:700">0%</div>
+          </div>
+          <div style="flex:1;margin:0 20px"><div class="prog"><span id="readyBar" style="width:0%"></span></div></div>
+          <div id="readyStatus" class="status missing">Not ready</div>
+        </div>
+      </div>
+      <div class="section">
+        <h3>Documents Checklist by Category</h3>
+        <div id="checklistView"></div>
+      </div>
+    </section>
+
+    <!-- DOCUMENTS -->
+    <section id="tab-documents" class="tab hidden">
+      <div class="section">
+        <div id="drop" class="drop">
+          <div style="font-size:32px">⬆️</div>
+          <div><b>Drop files / folders here</b> or <label style="color:var(--pri);cursor:pointer;text-decoration:underline">browse<input id="fileIn" type="file" multiple webkitdirectory directory style="display:none"></label> · <label style="color:var(--pri);cursor:pointer;text-decoration:underline">files only<input id="fileIn2" type="file" multiple style="display:none"></label></div>
+          <div style="font-size:12px;margin-top:6px">Stored locally in your browser (IndexedDB). Nothing is uploaded.</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="row" style="margin-bottom:10px">
+          <input id="docSearch" placeholder="🔎 Search by name, tag, notes…" style="flex:1;min-width:220px" oninput="renderDocs()">
+          <select id="docCat" onchange="renderDocs()"><option value="">All Categories</option></select>
+          <select id="docStatus" onchange="renderDocs()">
+            <option value="">All Status</option>
+            <option>Uploaded</option><option>Verified</option><option>Submitted</option><option>Pending</option>
+          </select>
+          <button class="btn danger" onclick="removeAllDocuments()">🗑 Remove All Documents</button>
+        </div>
+        <div style="overflow:auto"><table id="docTable">
+          <thead><tr><th>Name</th><th>Category</th><th>Tags</th><th>Size</th><th>Uploaded</th><th>Status</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- TAX -->
+    <section id="tab-tax" class="tab hidden">
+      <div class="warn">Enter values for the selected FY. Use <b>Auto-Fill from Documents</b> to scan all uploads and populate fields, or <b>🤖 AI Extract</b> on a single document. Always verify.</div>
+      <div class="row" style="margin-bottom:10px">
+        <button class="btn" onclick="autoFillFromDocs()">⚡ Auto-Fill from All Documents</button>
+        <button class="btn secondary" onclick="resetTaxCache()">♻ Reset Tax Cache</button>
+        <div id="residencyBadge" style="align-self:center;color:var(--mut);font-size:12px"></div>
+      </div>
+      <div class="grid2">
+        <div class="section">
+          <h3>Income</h3>
+          <div class="kv" id="incomeFields"></div>
+        </div>
+        <div class="section">
+          <h3>Deductions & Exemptions</h3>
+          <div class="kv" id="dedFields"></div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="section">
+          <h3>Taxes Already Paid</h3>
+          <div class="kv" id="paidFields"></div>
+        </div>
+        <div class="section">
+          <h3>Other</h3>
+          <div class="kv">
+            <label>Age Bracket</label>
+            <select id="taxAge"><option value="below60">Below 60</option><option value="senior">60–79 (Senior)</option><option value="super">80+ (Super Senior)</option></select>
+            <label>Metro City (HRA)</label>
+            <select id="metroCity"><option value="yes">Yes</option><option value="no">No</option></select>
+          </div>
+          <button class="btn" style="margin-top:14px;width:100%" onclick="computeTax()">Compute Tax (Old vs New)</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Comparison: Old vs New Regime</h3>
+        <div class="grid2">
+          <div class="card" id="oldCard"><h4>Old Regime</h4><div class="v">—</div></div>
+          <div class="card" id="newCard"><h4>New Regime</h4><div class="v">—</div></div>
+        </div>
+        <div id="recoBox" style="margin-top:12px"></div>
+        <div style="overflow:auto;margin-top:12px"><table id="taxBreakdown"><thead><tr><th>Item</th><th>Old Regime (₹)</th><th>New Regime (₹)</th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div class="section">
+        <h3>Final Summary</h3>
+        <div class="cards" id="finalCards"></div>
+      </div>
+    </section>
+
+    <!-- CALCULATORS -->
+    <section id="tab-calculators" class="tab hidden">
+      <div class="grid2">
+        <div class="section">
+          <h3>HRA Exemption</h3>
+          <div class="kv">
+            <label>Basic Salary (annual)</label><input type="number" id="hraBasic">
+            <label>HRA Received</label><input type="number" id="hraRcv">
+            <label>Rent Paid (annual)</label><input type="number" id="hraRent">
+            <label>Metro?</label><select id="hraMetro"><option value="1">Yes</option><option value="0">No</option></select>
+          </div>
+          <button class="btn sm" style="margin-top:8px" onclick="calcHRA()">Calculate</button>
+          <div id="hraOut" style="margin-top:8px"></div>
+        </div>
+        <div class="section">
+          <h3>Capital Gains (Equity)</h3>
+          <div class="kv">
+            <label>Sale Value</label><input type="number" id="cgSale">
+            <label>Cost</label><input type="number" id="cgCost">
+            <label>Holding (months)</label><input type="number" id="cgHold">
+          </div>
+          <button class="btn sm" style="margin-top:8px" onclick="calcCG()">Calculate</button>
+          <div id="cgOut" style="margin-top:8px"></div>
+        </div>
+        <div class="section">
+          <h3>Indexation (Debt MF/Property — pre-Jul-2024)</h3>
+          <div class="kv">
+            <label>Purchase Price</label><input type="number" id="idxBuy">
+            <label>Sale Price</label><input type="number" id="idxSale">
+            <label>CII Buy Year</label><input type="number" id="idxCb" value="289">
+            <label>CII Sale Year</label><input type="number" id="idxCs" value="363">
+          </div>
+          <button class="btn sm" style="margin-top:8px" onclick="calcIDX()">Calculate</button>
+          <div id="idxOut" style="margin-top:8px"></div>
+        </div>
+        <div class="section">
+          <h3>Home Loan Benefits</h3>
+          <div class="kv">
+            <label>Interest Paid (24b)</label><input type="number" id="hlInt">
+            <label>Principal Paid (80C)</label><input type="number" id="hlPrin">
+            <label>Property Type</label><select id="hlType"><option value="self">Self-Occupied</option><option value="let">Let-Out</option></select>
+          </div>
+          <button class="btn sm" style="margin-top:8px" onclick="calcHL()">Calculate</button>
+          <div id="hlOut" style="margin-top:8px"></div>
+        </div>
+        <div class="section">
+          <h3>NPS Benefits</h3>
+          <div class="kv">
+            <label>Self Contribution</label><input type="number" id="npsSelf">
+            <label>Employer Contribution</label><input type="number" id="npsEmp">
+          </div>
+          <button class="btn sm" style="margin-top:8px" onclick="calcNPS()">Calculate</button>
+          <div id="npsOut" style="margin-top:8px"></div>
+        </div>
+        <div class="section">
+          <h3>80C Utilization</h3>
+          <div class="kv">
+            <label>PPF</label><input type="number" id="c1">
+            <label>ELSS</label><input type="number" id="c2">
+            <label>LIC</label><input type="number" id="c3">
+            <label>EPF</label><input type="number" id="c4">
+            <label>Tuition</label><input type="number" id="c5">
+            <label>Home Loan Principal</label><input type="number" id="c6">
+          </div>
+          <button class="btn sm" style="margin-top:8px" onclick="calc80C()">Calculate</button>
+          <div id="c80Out" style="margin-top:8px"></div>
+        </div>
+        <div class="section">
+          <h3>Interest Income (Bank/FD)</h3>
+          <div class="kv">
+            <label>Savings Interest</label><input type="number" id="intSav">
+            <label>FD Interest</label><input type="number" id="intFd">
+            <label>Age 60+?</label><select id="intSr"><option value="0">No</option><option value="1">Yes</option></select>
+          </div>
+          <button class="btn sm" style="margin-top:8px" onclick="calcInt()">Calculate</button>
+          <div id="intOut" style="margin-top:8px"></div>
+        </div>
+        <div class="section">
+          <h3>Advance Tax</h3>
+          <div class="kv">
+            <label>Total Estimated Tax</label><input type="number" id="advT">
+            <label>TDS Already Deducted</label><input type="number" id="advTds">
+          </div>
+          <button class="btn sm" style="margin-top:8px" onclick="calcAdv()">Calculate</button>
+          <div id="advOut" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- REPORTS -->
+    <section id="tab-reports" class="tab hidden">
+      <div class="section">
+        <h3>Generate Reports</h3>
+        <div class="row">
+          <button class="btn" onclick="report('income')">Income Summary</button>
+          <button class="btn" onclick="report('investment')">Investment Summary</button>
+          <button class="btn" onclick="report('cg')">Capital Gains</button>
+          <button class="btn" onclick="report('ded')">Deduction Summary</button>
+          <button class="btn" onclick="report('annual')">Annual Tax Report</button>
+          <button class="btn" onclick="report('filing')">Filing Readiness</button>
+        </div>
+      </div>
+      <div class="section">
+        <h3>Export</h3>
+        <div class="row">
+          <button class="btn secondary" onclick="exportPDF()">📄 Export PDF</button>
+          <button class="btn secondary" onclick="exportXLSX()">📊 Export Excel</button>
+          <button class="btn secondary" onclick="exportCSV()">📑 Export CSV</button>
+          <button class="btn secondary" onclick="exportJSON()">🧾 Export JSON</button>
+          <button class="btn ghost" onclick="window.print()">🖨️ Print</button>
+        </div>
+      </div>
+      <div class="section" id="reportOut"></div>
+    </section>
+
+    <!-- REMINDERS -->
+    <section id="tab-reminders" class="tab hidden">
+      <div class="section">
+        <h3>Tax Deadlines & Reminders</h3>
+        <div id="reminders"></div>
+      </div>
+      <div class="section">
+        <h3>Custom Reminder</h3>
+        <div class="row">
+          <input id="rTitle" placeholder="Title">
+          <input id="rDate" type="date">
+          <button class="btn" onclick="addReminder()">Add</button>
+        </div>
+        <div id="customRem" style="margin-top:10px"></div>
+      </div>
+    </section>
+
+    <!-- YEARS -->
+    <section id="tab-years" class="tab hidden">
+      <div class="section">
+        <h3>Financial Years</h3>
+        <div class="row" style="margin-bottom:10px">
+          <input id="fyName" placeholder="FY 2025-26">
+          <button class="btn" onclick="createFY()">Create</button>
+          <button class="btn secondary" onclick="duplicateFY()">Duplicate Current</button>
+        </div>
+        <div id="fyList"></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="tab-settings" class="tab hidden">
+      <div class="section">
+        <h3>Security</h3>
+        <div class="row">
+          <input id="setPin" type="password" placeholder="Set/Change PIN">
+          <button class="btn" onclick="setPin()">Save PIN</button>
+          <button class="btn ghost" onclick="clearPin()">Remove PIN</button>
+        </div>
+        <div class="kv" style="margin-top:12px">
+          <label>Auto-lock after (minutes, 0=off)</label>
+          <input id="setTimeout" type="number" value="10">
+        </div>
+        <button class="btn sm" style="margin-top:8px" onclick="saveSettings()">Save</button>
+      </div>
+      <div class="section">
+        <h3>Backup & Restore</h3>
+        <div class="row">
+          <button class="btn" onclick="backupAll()">⬇️ Export Full Backup (JSON)</button>
+          <label class="btn secondary">⬆️ Restore Backup<input type="file" accept=".json" style="display:none" onchange="restoreAll(event)"></label>
+          <button class="btn danger" onclick="wipeAll()">🗑 Wipe All Data</button>
+        </div>
+        <div class="warn">Backup includes documents (as base64), checklist, tax inputs, reminders.</div>
+      </div>
+      <div class="section">
+        <h3>Privacy</h3>
+        <p style="color:var(--mut)">TaxVault stores all data in your browser only (LocalStorage + IndexedDB). No data is uploaded anywhere. Clearing browser data will erase everything — keep regular backups.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Doc modal -->
+<div class="modal" id="docModal"><div class="box">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <h3 id="dmName" style="margin:0">Document</h3>
+    <button class="btn ghost sm" onclick="closeDoc()">✕</button>
+  </div>
+  <div id="dmPreview" style="margin:12px 0;max-height:400px;overflow:auto;background:var(--panel2);border-radius:10px;padding:10px"></div>
+  <div class="kv">
+    <label>Category</label><select id="dmCat"></select>
+    <label>Status</label><select id="dmStatus"><option>Pending</option><option>Uploaded</option><option>Verified</option><option>Submitted</option></select>
+    <label>Tags (comma)</label><input id="dmTags">
+    <label>Notes</label><textarea id="dmNotes" rows="3"></textarea>
+  </div>
+  <div class="row" style="margin-top:12px">
+    <button class="btn" onclick="saveDoc()">Save</button>
+    <button class="btn secondary" onclick="downloadDoc()">Download</button>
+    <label class="btn secondary">Replace<input type="file" style="display:none" onchange="replaceDoc(event)"></label>
+    <button class="btn secondary" onclick="analyzeDoc()">🤖 AI Extract</button>
+    <button class="btn danger" onclick="deleteDoc()">Delete</button>
+  </div>
+  <div id="versions" style="margin-top:12px"></div>
+</div></div>
+
+<!-- Auto-Fill Review modal -->
+<div class="modal" id="reviewModal"><div class="box" style="max-width:860px">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <h3 style="margin:0">🔍 Review Extracted Data</h3>
+    <button class="btn ghost sm" onclick="closeReview()">✕</button>
+  </div>
+  <p id="reviewSummary" style="color:var(--mut);font-size:12px;margin:8px 0 12px"></p>
+  <div style="max-height:420px;overflow:auto;background:var(--panel2);border-radius:10px;padding:8px">
+  <table style="width:100%;font-size:12px">
+    <thead><tr style="text-align:left;color:var(--mut)">
+      <th style="width:28px"></th><th>Document</th><th>Detected Type</th><th>Tax Field</th><th style="width:130px">Amount (₹)</th>
+    </tr></thead>
+    <tbody id="reviewBody"></tbody>
+  </table>
+  </div>
+  <div class="row" style="margin-top:12px;gap:16px;flex-wrap:wrap">
+    <label style="font-size:12px"><input type="radio" name="rvMode" value="set" checked> Set — replace existing Tax Computation fields with these totals (recommended)</label>
+    <label style="font-size:12px"><input type="radio" name="rvMode" value="add"> Add — add on top of whatever is already entered</label>
+  </div>
+  <div class="row" style="margin-top:12px">
+    <button class="btn" onclick="applyReview()">✅ Apply Checked Rows to Tax Computation</button>
+    <button class="btn secondary" onclick="closeReview()">Cancel</button>
+  </div>
+  <div class="warn" style="margin-top:10px">⚠ This is best-effort text extraction from your documents. Please verify every figure — especially capital gains and interest — against the original statements before filing.</div>
+</div></div>
+
+<script>
+/* ============================================================
+   TaxVault — Offline Indian ITR Helper
+   - All data in localStorage (metadata) + IndexedDB (files)
+   - Pure HTML/CSS/JS; CDN-only for chart/pdf/xlsx
+   ============================================================ */
+
+// ---------- Storage helpers ----------
+const LS = {
+  get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},
+  set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))
+};
+
+// IndexedDB for files
+let db;
+function openDB(){return new Promise((res,rej)=>{
+  const r=indexedDB.open('taxvault',1);
+  r.onupgradeneeded=()=>{r.result.createObjectStore('files')};
+  r.onsuccess=()=>{db=r.result;res()};
+  r.onerror=()=>rej(r.error);
+});}
+function idbPut(k,v){return new Promise(r=>{const t=db.transaction('files','readwrite');t.objectStore('files').put(v,k);t.oncomplete=r})}
+function idbGet(k){return new Promise(r=>{const t=db.transaction('files','readonly');const q=t.objectStore('files').get(k);q.onsuccess=()=>r(q.result)})}
+function idbDel(k){return new Promise(r=>{const t=db.transaction('files','readwrite');t.objectStore('files').delete(k);t.oncomplete=r})}
+
+// ---------- Schema ----------
+// residency applicability: R=Resident(ROR), N=RNOR, X=NRI. If omitted => all.
+const CATEGORIES = {
+  "Income": ["Salary Slips","Form 16","Form 26AS","AIS","TIS","Pension","Business Income","Freelance Income","Foreign Salary"],
+  "Banking": ["Savings Account Statements","Current Account Statements","FD Statements","Interest Certificates","NRE Account Statements","NRO Account Statements","FCNR Account Statements","Foreign Bank Statements"],
+  "Investments": ["Mutual Fund Statements","SIP Statements","Demat Statements","Equity Statements","Capital Gains Reports","Dividend Reports","Bond Investments","ETFs","Gold Investments","PIS Statement (NRI)"],
+  "Property": ["Rental Income","Home Loan Interest","Principal Repayment","Property Tax","Sale/Purchase Deeds","TDS on Property Sale (26QB)"],
+  "Insurance": ["LIC","Medical Insurance","ULIPs"],
+  "Deductions": ["PPF","EPF","NPS","ELSS","Tuition Fees","Donations","NSC","Sukanya Samriddhi","Senior Citizen Savings Scheme"],
+  "NRI / Foreign Assets": ["Foreign Salary","Foreign Tax Paid","Foreign Bank Accounts","Foreign Assets Schedule (FA)","DTAA / Form 10F","Tax Residency Certificate","Employment Pass / Work Visa","Passport (Travel Days Proof)","Malaysia EPF / Foreign PF"],
+  "Identity": ["PAN","Aadhaar","Passport","Previous ITR","Rent Receipts"]
+};
+// Item-level residency filter (only listed items are restricted; rest apply to all)
+const CATEGORY_APPLIES = {
+  "Rent Receipts": ["ROR"],                          // HRA typically for residents
+  "Sukanya Samriddhi": ["ROR"],
+  "Senior Citizen Savings Scheme": ["ROR"],
+  "PPF": ["ROR","RNOR"],                             // NRIs cannot open new PPF
+  "NPS": ["ROR","RNOR"],
+  "NRE Account Statements": ["NRI","RNOR"],
+  "NRO Account Statements": ["NRI","RNOR"],
+  "FCNR Account Statements": ["NRI","RNOR"],
+  "PIS Statement (NRI)": ["NRI"],
+  "Foreign Salary": ["ROR","RNOR","NRI"],
+  "Foreign Tax Paid": ["ROR","RNOR","NRI"],
+  "Foreign Bank Accounts": ["ROR"],                  // Sch FA mandatory only for ROR
+  "Foreign Assets Schedule (FA)": ["ROR"],
+  "DTAA / Form 10F": ["NRI","RNOR"],
+  "Tax Residency Certificate": ["NRI","RNOR"],
+  "Employment Pass / Work Visa": ["NRI","RNOR"],
+  "Passport (Travel Days Proof)": ["NRI","RNOR"],
+  "Malaysia EPF / Foreign PF": ["NRI","RNOR"],
+};
+function itemApplies(item, res){
+  const f = CATEGORY_APPLIES[item];
+  return !f || f.includes(res);
+}
+const ALL_DOCS = Object.entries(CATEGORIES).flatMap(([cat,items])=>items.map(i=>({cat,name:i})));
+
+const TAX_FIELDS_INCOME = [
+  ['salary_india','Salary Income (India / INR only)'],
+  ['salary_foreign','Salary Income (Foreign / MYR - excluded for NRI/RNOR)'],
+  ['interest','Interest Income'], ['rental','Rental Income (net)'],
+  ['dividend','Dividend Income'], ['stcg','Short-Term Capital Gains (15%)'], ['ltcg','Long-Term Capital Gains (>1L taxed @10%)'],
+  ['business','Business / Profession Income'], ['foreign','Foreign Income'], ['other','Other Income'],
+  ['bankEstimatedIncome','Estimated Taxable Bank Credits (salary/business/rent only)'],
+  ['bankTaxableExcessCredit','Taxable Bank Credits Manually Confirmed'],
+  ['bankCredits12L','Bank Credits Above ₹12L Review (not taxable by itself)'],
+  ['bankTotalCredits','Total Bank Credits Detected Across Banks'],
+  ['cashDepositReview','Cash Deposits Detected / SFT Review']
+];
+const TAX_FIELDS_DED = [
+  ['d80c','Section 80C (max 1.5L)'], ['d80ccd1b','Section 80CCD(1B) NPS (max 50k)'],
+  ['d80d','Section 80D Medical Insurance'], ['d24b','Section 24(b) Home Loan Interest (max 2L SOP)'],
+  ['hra','HRA Exemption'], ['lta','LTA Exemption'], ['d80g','Section 80G Donations'], ['d80tta','80TTA/80TTB Interest'],
+  ['otherDed','Other Deductions']
+];
+const TAX_FIELDS_PAID = [
+  ['tds','TDS Deducted'], ['advance','Advance Tax Paid'], ['sat','Self-Assessment Tax Paid']
+];
+
+// ---------- App state ----------
+let state = {
+  years: LS.get('tv.years', []),         // [{id,name,archived,createdAt}]
+  currentYear: LS.get('tv.cur', null),
+  data: LS.get('tv.data', {}),           // {yearId: {docs:[], checklist:{}, tax:{}, reminders:[], activity:[]}}
+  settings: LS.get('tv.settings', {pin:null,timeout:10}),
+};
+function saveAll(){LS.set('tv.years',state.years);LS.set('tv.cur',state.currentYear);LS.set('tv.data',state.data);LS.set('tv.settings',state.settings)}
+function curYear(){return state.years.find(y=>y.id===state.currentYear)}
+function curData(){
+  if(!state.currentYear)return null;
+  if(!state.data[state.currentYear]) state.data[state.currentYear]={docs:[],checklist:{},tax:{},reminders:[],activity:[]};
+  return state.data[state.currentYear];
+}
+function logAct(msg){const d=curData();if(!d)return;d.activity.unshift({t:Date.now(),msg});d.activity=d.activity.slice(0,30);saveAll()}
+
+// ---------- Init ----------
+window.addEventListener('DOMContentLoaded', async ()=>{
+  await openDB();
+  if(state.years.length===0){
+    const id=uid();
+    state.years.push({id,name:'FY 2025-26',archived:false,createdAt:Date.now()});
+    state.currentYear=id;
+    saveAll();
+  }
+  setupAuth();
+  setupNav();
+  setupFY();
+  setupDrop();
+  buildTaxForm();
+  renderAll();
+  setupTimeout();
+});
+
+function uid(){return Math.random().toString(36).slice(2,10)}
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2500)}
+
+// ---------- Auth / Lock ----------
+function setupAuth(){
+  if(state.settings.pin){showLock()}else{document.getElementById('lock').classList.add('hidden')}
+}
+function showLock(){
+  const lock=document.getElementById('lock');
+  lock.classList.remove('hidden');
+  document.getElementById('pinHint').textContent = state.settings.pin?'Enter your PIN':'First time? Choose a PIN to set it.';
+  document.getElementById('pinInput').value='';document.getElementById('pinInput').focus();
+}
+function tryUnlock(){
+  const v=document.getElementById('pinInput').value;
+  if(!v)return;
+  if(!state.settings.pin){state.settings.pin=v;saveAll();toast('PIN set');}
+  if(v===state.settings.pin){document.getElementById('lock').classList.add('hidden');resetTimeout()}
+  else toast('Wrong PIN');
+}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&!document.getElementById('lock').classList.contains('hidden'))tryUnlock()});
+function lockNow(){if(state.settings.pin)showLock();else toast('Set a PIN first in Settings')}
+let toHandle;
+function setupTimeout(){resetTimeout();['click','keydown','mousemove'].forEach(e=>document.addEventListener(e,resetTimeout))}
+function resetTimeout(){clearTimeout(toHandle);const m=state.settings.timeout;if(m>0&&state.settings.pin)toHandle=setTimeout(showLock,m*60000)}
+
+// ---------- Nav ----------
+function setupNav(){
+  document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+}
+function showTab(t){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.add('hidden'));
+  document.getElementById('tab-'+t).classList.remove('hidden');
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
+  document.getElementById('pageTitle').textContent={dashboard:'Dashboard',checklist:'Checklist',documents:'Documents',tax:'Tax Computation',calculators:'Calculators',reports:'Reports',reminders:'Reminders',years:'Financial Years',settings:'Settings'}[t];
+  renderAll();
+}
+
+// ---------- FY ----------
+function setupFY(){
+  document.getElementById('fySelect').onchange=e=>{state.currentYear=e.target.value;saveAll();renderAll()};
+}
+function renderFYSelect(){
+  const s=document.getElementById('fySelect');
+  s.innerHTML=state.years.map(y=>`<option value="${y.id}" ${y.id===state.currentYear?'selected':''}>${y.name}${y.archived?' (Archived)':''}</option>`).join('');
+  const rs=document.getElementById('residency');if(rs)rs.value=getResidency();
+  const rb=document.getElementById('residencyBadge');if(rb){
+    const r=getResidency();
+    rb.innerHTML='Residency for this FY: <b style="color:var(--txt)">'+r+'</b> — '+({ROR:'worldwide income, all deductions',RNOR:'foreign income excluded',NRI:'Indian-source only, no 87A / 80TTA'}[r]);
+  }
+}
+function createFY(){
+  const n=document.getElementById('fyName').value.trim();if(!n)return;
+  const id=uid();state.years.push({id,name:n,archived:false,createdAt:Date.now()});
+  state.currentYear=id;saveAll();document.getElementById('fyName').value='';renderAll();toast('Created '+n);
+}
+function duplicateFY(){
+  const c=curYear();if(!c)return;
+  const id=uid();state.years.push({id,name:c.name+' (copy)',archived:false,createdAt:Date.now()});
+  // copy checklist + tax inputs, NOT docs
+  const d=state.data[c.id]||{};
+  state.data[id]={docs:[],checklist:JSON.parse(JSON.stringify(d.checklist||{})),tax:JSON.parse(JSON.stringify(d.tax||{})),reminders:[],activity:[]};
+  state.currentYear=id;saveAll();renderAll();toast('Duplicated');
+}
+function renderFYList(){
+  document.getElementById('fyList').innerHTML=state.years.map(y=>`
+    <div class="cat">
+      <div><b>${y.name}</b><div style="font-size:11px;color:var(--mut)">Created ${new Date(y.createdAt).toLocaleDateString()}</div></div>
+      <div class="row">
+        <button class="btn sm secondary" onclick="renameFY('${y.id}')">Rename</button>
+        <button class="btn sm secondary" onclick="archiveFY('${y.id}')">${y.archived?'Unarchive':'Archive'}</button>
+        <button class="btn sm danger" onclick="deleteFY('${y.id}')">Delete</button>
+      </div>
+    </div>`).join('');
+}
+function renameFY(id){const n=prompt('New name?');if(!n)return;state.years.find(y=>y.id===id).name=n;saveAll();renderAll()}
+function archiveFY(id){const y=state.years.find(y=>y.id===id);y.archived=!y.archived;saveAll();renderAll()}
+function deleteFY(id){if(!confirm('Delete this FY and all its data?'))return;const d=state.data[id];if(d){d.docs.forEach(x=>idbDel(x.id))}delete state.data[id];state.years=state.years.filter(y=>y.id!==id);if(state.currentYear===id)state.currentYear=state.years[0]?.id||null;saveAll();renderAll()}
+
+// ---------- Documents ----------
+function setupDrop(){
+  const d=document.getElementById('drop');
+  d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('hot')});
+  d.addEventListener('dragleave',()=>d.classList.remove('hot'));
+  d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('hot');handleFiles(e.dataTransfer.files)});
+  document.getElementById('fileIn').onchange=e=>handleFiles(e.target.files);
+  document.getElementById('fileIn2').onchange=e=>handleFiles(e.target.files);
+  document.getElementById('docSearch');
+}
+async function handleFiles(list){
+  const d=curData();if(!d)return;
+  for(const f of list){
+    const id=uid();
+    const buf=await f.arrayBuffer();
+    await idbPut(id,{name:f.name,type:f.type,size:f.size,data:buf});
+    const cat=guessCat(f.name);
+    d.docs.push({id,name:f.name,type:f.type,size:f.size,category:cat,status:'Uploaded',tags:[],notes:'',uploadedAt:Date.now(),modifiedAt:Date.now(),versions:[]});
+    logAct('Uploaded '+f.name);
+  }
+  saveAll();renderAll();toast(list.length+' file(s) added');
+}
+function guessCat(name){
+  const n=name.toLowerCase();
+  if(/nro/.test(n))return 'NRO Account Statements';
+  if(/nre/.test(n))return 'NRE Account Statements';
+  if(/fcnr/.test(n))return 'FCNR Account Statements';
+  if(/sbi|state bank|unionbank|union bank|axis|hdfc|icici|kotak|canara|pnb|bank statement|statement/.test(n))return 'Savings Account Statements';
+  if(n.includes('form16'))return 'Form 16';
+  if(n.includes('26as'))return 'Form 26AS';
+  if(n.includes('ais'))return 'AIS';
+  if(n.includes('salary'))return 'Salary Slips';
+  if(n.includes('fd'))return 'FD Statements';
+  if(n.includes('mutual')||n.includes('mf'))return 'Mutual Fund Statements';
+  if(n.includes('rent'))return 'Rent Receipts';
+  if(n.includes('pan'))return 'PAN';
+  if(n.includes('aadhaar'))return 'Aadhaar';
+  return 'Uncategorized';
+}
+function fmtSize(b){if(b<1024)return b+' B';if(b<1024*1024)return (b/1024).toFixed(1)+' KB';return (b/1048576).toFixed(2)+' MB'}
+function renderDocs(){
+  const d=curData();if(!d)return;
+  const cat=document.getElementById('docCat'); const cur=cat.value;
+  cat.innerHTML='<option value="">All Categories</option>'+ALL_DOCS.map(x=>`<option ${x.name===cur?'selected':''}>${x.name}</option>`).join('');
+  const q=(document.getElementById('docSearch')?.value||'').toLowerCase();
+  const cf=document.getElementById('docCat').value;
+  const sf=document.getElementById('docStatus').value;
+  const rows=d.docs.filter(x=>{
+    if(cf&&x.category!==cf)return false;
+    if(sf&&x.status!==sf)return false;
+    if(q){const hay=(x.name+' '+(x.tags||[]).join(' ')+' '+(x.notes||'')+' '+x.category).toLowerCase();if(!hay.includes(q))return false}
+    return true;
+  });
+  document.querySelector('#docTable tbody').innerHTML=rows.map(x=>`
+    <tr>
+      <td><a href="#" onclick="openDoc('${x.id}');return false">${x.name}</a></td>
+      <td>${x.category||'—'}</td>
+      <td>${(x.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</td>
+      <td>${fmtSize(x.size)}</td>
+      <td>${new Date(x.uploadedAt).toLocaleDateString()}</td>
+      <td><span class="status ${x.status.toLowerCase()}">${x.status}</span></td>
+      <td><button class="btn sm ghost" onclick="openDoc('${x.id}')">Open</button></td>
+    </tr>`).join('') || '<tr><td colspan=7 style="text-align:center;color:var(--mut);padding:30px">No documents yet — drop some above.</td></tr>';
+}
+
+let openDocId=null;
+async function openDoc(id){
+  openDocId=id;
+  const d=curData();const x=d.docs.find(o=>o.id===id);if(!x)return;
+  document.getElementById('dmName').textContent=x.name;
+  const sel=document.getElementById('dmCat');
+  sel.innerHTML='<option>Uncategorized</option>'+ALL_DOCS.map(c=>`<option ${c.name===x.category?'selected':''}>${c.name}</option>`).join('');
+  document.getElementById('dmStatus').value=x.status;
+  document.getElementById('dmTags').value=(x.tags||[]).join(', ');
+  document.getElementById('dmNotes').value=x.notes||'';
+  const f=await idbGet(id);
+  const prev=document.getElementById('dmPreview');
+  if(f&&f.type.startsWith('image/')){
+    const blob=new Blob([f.data],{type:f.type});prev.innerHTML=`<img src="${URL.createObjectURL(blob)}" style="max-width:100%">`;
+  }else if(f&&f.type==='application/pdf'){
+    const blob=new Blob([f.data],{type:f.type});prev.innerHTML=`<iframe src="${URL.createObjectURL(blob)}" style="width:100%;height:380px;border:0;background:white"></iframe>`;
+  }else{prev.innerHTML=`<div style="color:var(--mut)">No inline preview for ${f?.type||'this type'}</div>`}
+  document.getElementById('versions').innerHTML=(x.versions||[]).length?'<h4>Version history</h4>'+x.versions.map(v=>`<div class="cat"><div>${v.name} · ${fmtSize(v.size)}</div><div style="color:var(--mut);font-size:11px">${new Date(v.t).toLocaleString()}</div></div>`).join(''):'';
+  document.getElementById('docModal').classList.add('show');
+}
+function closeDoc(){document.getElementById('docModal').classList.remove('show');openDocId=null}
+function saveDoc(){
+  const d=curData();const x=d.docs.find(o=>o.id===openDocId);if(!x)return;
+  x.category=document.getElementById('dmCat').value;
+  x.status=document.getElementById('dmStatus').value;
+  x.tags=document.getElementById('dmTags').value.split(',').map(s=>s.trim()).filter(Boolean);
+  x.notes=document.getElementById('dmNotes').value;
+  x.modifiedAt=Date.now();
+  saveAll();renderAll();toast('Saved');closeDoc();
+}
+async function downloadDoc(){
+  const f=await idbGet(openDocId);if(!f)return;
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([f.data],{type:f.type}));a.download=f.name;a.click();
+}
+async function replaceDoc(e){
+  const file=e.target.files[0];if(!file)return;
+  const d=curData();const x=d.docs.find(o=>o.id===openDocId);
+  x.versions=x.versions||[];x.versions.unshift({name:x.name,size:x.size,t:x.modifiedAt});
+  const buf=await file.arrayBuffer();
+  await idbPut(openDocId,{name:file.name,type:file.type,size:file.size,data:buf});
+  x.name=file.name;x.size=file.size;x.type=file.type;x.modifiedAt=Date.now();
+  saveAll();renderAll();toast('Replaced');openDoc(openDocId);
+}
+async function deleteDoc(){
+  if(!confirm('Delete this document?'))return;
+  const d=curData();await idbDel(openDocId);d.docs=d.docs.filter(o=>o.id!==openDocId);
+  saveAll();renderAll();closeDoc();
+}
+// Extract keys → Tax Computation field ids
+// Extract keys → Tax Computation field ids
+const EXTRACT_MAP = {
+  salary:'salary_india', grossSalary:'salary_india', basic:'salary_india',
+  salary_india:'salary_india', salary_foreign:'salary_foreign',
+  tds:'tds', tdsSalary:'tds', tdsOther:'tds',
+  interest:'interest', savingsInterest:'interest', fdInterest:'interest',
+  dividend:'dividend', rental:'rental', rent:'rental',
+  hra:'hra', lta:'lta',
+  '80c':'d80c', '80ccd1b':'d80ccd1b', '80d':'d80d',
+  homeLoanInterest:'d24b', '24b':'d24b',
+  stcg:'stcg', ltcg:'ltcg', business:'business', foreign:'foreign',
+  bankEstimatedIncome:'bankEstimatedIncome', bankTaxableExcessCredit:'bankTaxableExcessCredit', bankCredits12L:'bankCredits12L', bankTotalCredits:'bankTotalCredits', cashDepositReview:'cashDepositReview',
+  advanceTax:'advance', selfAssessment:'sat',
+};
+const DOC_TYPE_LABEL = {
+  mfCAS:'Mutual Fund / Capital Gains', bankStatement:'Bank Statement', foreignSalary:'Foreign / MYR Salary',
+  healthInsurance:'Health Insurance', lifeInsurance:'Life Insurance (LIC)',
+  ppf:'PPF', elss:'ELSS', nps:'NPS', homeLoan:'Home Loan',
+  salary:'Salary Slip', form16:'Form 16', form26as:'Form 26AS', ais:'AIS/TIS',
+  identity:'Identity / Travel Doc', rentReceipt:'Rent Receipt', generic:'Generic / Unclassified'
+};
+
+// ---------- Document classification (content + filename + folder category) ----------
+function hasForeignCurrencyOrMalaysia(text, filename='', category=''){
+  const hay=((text||'')+' '+(filename||'')+' '+(category||'')).toLowerCase();
+  return /(myr|rm)|ringgit|malaysia|lhdn|hasil|kwsp|socso|perkeso|pcb|eis/i.test(hay);
+}
+function hasIndianSalarySignal(text, filename='', category=''){
+  const hay=((text||'')+' '+(filename||'')+' '+(category||'')).toLowerCase();
+  return /form\s*-?\s*16|tan|tds|traces|26as|ais|income\s*tax\s*india|inr|₹|rs\.?|rupees|uan|employee\s*provident\s*fund|services\s*rendered\s*in\s*india/i.test(hay);
+}
+function classifySalarySource(text, filename='', category=''){
+  const indian=hasIndianSalarySignal(text, filename, category), foreign=hasForeignCurrencyOrMalaysia(text, filename, category);
+  if(foreign && !indian) return 'salary_foreign';
+  if(indian && !foreign) return 'salary_india';
+  if(foreign && indian){
+    if(/form\s*-?\s*16|tan|tds|traces|26as|ais/i.test((text||'')+' '+filename)) return 'salary_india';
+    if(/(myr|rm)|lhdn|hasil|kwsp|socso|perkeso|pcb/i.test((text||'')+' '+filename)) return 'salary_foreign';
+  }
+  return 'salary_india';
+}
+function isLikelyForeignSalaryDoc(text, filename='', category=''){
+  const hay=((text||'')+' '+filename+' '+category).toLowerCase();
+  return /salary|pay\s*slip|payslip|payroll|gross\s*pay|net\s*pay|basic\s*salary|remuneration/i.test(hay) && classifySalarySource(text, filename, category)==='salary_foreign';
+}
+function classifyDoc(text, filename, category){
+  const nameL=(filename||'').toLowerCase();
+  const catL=(category||'').toLowerCase();
+  const T=text||'';
+
+  if(/form\s*-?\s*16\b/i.test(nameL)||catL==='form 16') return 'form16';
+  if(/26\s*as/i.test(nameL)||catL==='form 26as') return 'form26as';
+  if(/\bais\b|\btis\b/i.test(nameL)||catL==='ais'||catL==='tis') return 'ais';
+  if(/passport/i.test(nameL) && !/rent/i.test(nameL)) return 'identity';
+  if(/\b(nro|nre|fcnr)\b/i.test(nameL) || /axis\s*nro|axis\s*nre/i.test(nameL)) return 'bankStatement';
+  if(/rent\s*receipt/i.test(nameL)||catL==='rent receipts') return 'rentReceipt';
+  if(/sbi|state\s*bank|union\s*bank|unionbank|hdfc|icici|axis|kotak|canara|bank\s*of\s*baroda|punjab\s*national|\bpnb\b/i.test(nameL) || catL.includes('account statement') || catL.includes('nro account') || catL.includes('nre account')) return 'bankStatement';
+  if(isLikelyForeignSalaryDoc(T,nameL,catL)) return 'foreignSalary';
+
+  // Mutual fund / capital gains statements (CAMS/KFintech CAS, broker CG reports, contract notes)
+  let mfScore=0;
+  if(/consolidated\s+account\s+statement|\bcas\b/i.test(T)) mfScore+=2;
+  if(/folio\s*(?:no\.?|number)/i.test(T)) mfScore+=2;
+  if(/mutual\s*fund/i.test(T)) mfScore+=1;
+  if(/scheme\s*name|nav\s*(?:on|as\s*on)\s*date|units?\s*bal(?:ance)?/i.test(T)) mfScore+=1;
+  if(/redemption|repurchase|switch[\s-]*(?:in|out)/i.test(T)) mfScore+=1;
+  if(/capital\s*gain(?:s)?\s*statement/i.test(T)) mfScore+=2;
+  if(/\bmf\b|capital\s*gain/i.test(nameL)) mfScore+=2;
+  if(catL.includes('mutual fund')||catL.includes('capital gain')||catL.includes('sip')||catL.includes('demat')||catL.includes('equity statement')) mfScore+=2;
+  if(mfScore>=2) return 'mfCAS';
+
+  // Bank account statements
+  let bankScore=0;
+  if(/statement\s*of\s*account|account\s*statement|mini\s*statement/i.test(T)) bankScore+=2;
+  if(/\bifsc\b|\bmicr\b/i.test(T)) bankScore+=1;
+  if(/opening\s*balance|closing\s*balance/i.test(T)) bankScore+=2;
+  if(/withdrawal/i.test(T) && /deposit/i.test(T)) bankScore+=1;
+  if(/bank/i.test(nameL)) bankScore+=1;
+  if(catL.includes('account statement')||catL.includes('fd statement')||catL.includes('interest certificate')) bankScore+=2;
+  if(bankScore>=3) return 'bankStatement';
+
+  const healthScore=(/health|mediclaim|hospitali[sz]ation/i.test(T)?2:0)+(/health|mediclaim|star.?health/i.test(nameL)?2:0)+(catL==='medical insurance'?2:0);
+  const lifeScore=(/\blic\b|life\s*insurance\s*corp/i.test(T)?2:0)+(/\blic\b/i.test(nameL)?2:0)+(catL==='lic'?2:0);
+  if(healthScore>=2 && healthScore>=lifeScore) return 'healthInsurance';
+  if(lifeScore>=2) return 'lifeInsurance';
+
+  if(/\bppf\b|public\s*provident/i.test(T)||/\bppf\b/i.test(nameL)||catL==='ppf') return 'ppf';
+  const elssScore=(/\belss\b|equity\s*linked\s*savings/i.test(T)?1:0)+(/\belss\b/i.test(nameL)?2:0)+(catL==='elss'?2:0);
+  if(elssScore>=2) return 'elss';
+  if(/\bnps\b|national\s*pension/i.test(T)||/\bnps\b/i.test(nameL)||catL==='nps') return 'nps';
+  if(/home\s*loan|housing\s*loan/i.test(T)||/home.?loan|housing/i.test(nameL)||catL.includes('home loan')) return 'homeLoan';
+  if(/salary\s*slip|pay\s*-?\s*slip|for\s*(?:inr|myr|rm)\s*[-:]/i.test(T)||nameL.includes('salary')||catL==='salary slips'){ if(isLikelyForeignSalaryDoc(T,nameL,catL)) return 'foreignSalary'; return 'salary'; }
+  return 'generic';
+}
+
+function _numify(s){
+  return Number(String(s).replace(/[,\s]/g,'').replace(/[₹]/g,'').replace(/rs\.?|inr/gi,''));
+}
+// Return {value, distance} for the number closest to position `pos` within `window` chars (both sides)
+function _closestNumber(T, pos, window=250){
+  const numRx=/(?:₹|rs\.?|inr)?\s*(-?\d{1,3}(?:[,\s]\d{2,3})+(?:\.\d+)?|-?\d{4,}(?:\.\d+)?|-?\d+\.\d{2})/gi;
+  const start=Math.max(0,pos-window), end=Math.min(T.length,pos+window);
+  const slice=T.slice(start,end); const rel=pos-start;
+  let best=null,m;
+  while((m=numRx.exec(slice))!==null){
+    const v=_numify(m[1]); if(!(v>0&&v<1e10))continue;
+    const d=Math.abs(m.index-rel);
+    if(best===null||d<best.d) best={v,d};
+  }
+  return best;
+}
+// Sum the closest number found near EVERY occurrence of a label (for statements with many lines/folios),
+// instead of only the single closest occurrence — needed for bank/MF statements with repeated rows.
+function _sumAllNear(T, rx, window=200){
+  const rxG=new RegExp(rx.source, rx.flags.includes('g')?rx.flags:rx.flags+'g');
+  let m,total=0,count=0;
+  while((m=rxG.exec(T))!==null){
+    const c=_closestNumber(T, m.index+Math.floor(m[0].length/2), window);
+    if(c){ total+=c.v; count++; }
+  }
+  return count?total:null;
+}
+function _parseDateFlexible(s){
+  const months={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+  let m=s.match(/(\d{1,2})[-\/]([A-Za-z]{3})[-\/](\d{4})/);
+  if(m){const mo=months[m[2].toLowerCase()];if(mo===undefined)return null;return new Date(Number(m[3]),mo,Number(m[1]));}
+  m=s.match(/(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+  if(m)return new Date(Number(m[3]),Number(m[2])-1,Number(m[1]));
+  return null;
+}
+
+// ---- Mutual Fund capital gains: prefer explicit summary totals; else FIFO from transaction rows ----
+function extractCapitalGains(T){
+  const out={};
+  const stcgTotal=_sumAllNear(T,/short[\s-]*term\s*capital\s*gain(?:s)?(?:\s*\/\s*loss)?/i);
+  const ltcgTotal=_sumAllNear(T,/long[\s-]*term\s*capital\s*gain(?:s)?(?:\s*\/\s*loss)?/i);
+  if(stcgTotal!==null) out.stcg=Math.round(stcgTotal);
+  if(ltcgTotal!==null) out.ltcg=Math.round(ltcgTotal);
+  if(out.stcg!==undefined || out.ltcg!==undefined) return out;
+
+  // Fallback: reconstruct realized gains from transaction rows via FIFO matching
+  // Typical CAS row: DD-MMM-YYYY  Description(Purchase/SIP/Redemption/Switch)  Units   NAV   Amount
+  const rowRx=/(\d{1,2}[-\/][A-Za-z]{3}[-\/]\d{4}|\d{1,2}[-\/]\d{1,2}[-\/]\d{4})\s+([A-Za-z][A-Za-z .\-\/&()]{2,60}?)\s+(-?\d[\d,]*\.\d{2,4})\s+(-?\d[\d,]*\.\d{2,4})\s+(-?\d[\d,]*\.\d{2,4})/g;
+  const rows=[]; let m;
+  while((m=rowRx.exec(T))!==null){
+    const [,dateStr,desc,units,nav,amt]=m;
+    const dt=_parseDateFlexible(dateStr); if(!dt)continue;
+    const isRedeem=/redeem|repurchase|switch[\s-]*out/i.test(desc);
+    const isBuy=!isRedeem && /purchase|sip|switch[\s-]*in|systematic/i.test(desc);
+    if(isBuy) rows.push({type:'buy',date:dt,units:_numify(units),amt:_numify(amt)});
+    else if(isRedeem) rows.push({type:'sell',date:dt,units:Math.abs(_numify(units)),amt:Math.abs(_numify(amt))});
+  }
+  if(rows.length>=2){
+    const buys=rows.filter(r=>r.type==='buy').sort((a,b)=>a.date-b.date)
+      .map(r=>({...r,remaining:r.units,costPerUnit:r.units?r.amt/r.units:0}));
+    const sells=rows.filter(r=>r.type==='sell').sort((a,b)=>a.date-b.date);
+    let stcg=0,ltcg=0,matchedAny=false;
+    for(const s of sells){
+      let need=s.units;
+      const sellPerUnit=s.units?s.amt/s.units:0;
+      for(const b of buys){
+        if(need<=0.0001)break;
+        if(b.remaining<=0.0001||b.date>s.date)continue;
+        const matched=Math.min(b.remaining,need);
+        const gain=matched*sellPerUnit-matched*b.costPerUnit;
+        const days=(s.date-b.date)/86400000;
+        if(days>365) ltcg+=gain; else stcg+=gain;
+        b.remaining-=matched; need-=matched; matchedAny=true;
+      }
+    }
+    if(matchedAny){ out.stcg=Math.round(stcg); out.ltcg=Math.round(ltcg); }
+  }
+  return out;
+}
+
+// ---- Bank statement: interest + FY-specific incoming/received credit calculation ----
+const BANK_CREDIT_REVIEW_LIMIT = 1200000;
+const BANK_TXN_MAX_REASONABLE = 10000000;
+function getCurrentFYRange(){
+  const nm=(curYear()?.name||'').match(/(20\d{2})\s*-\s*(\d{2,4})/);
+  let startY=new Date().getFullYear(); if(nm) startY=Number(nm[1]);
+  return {start:new Date(startY,3,1), end:new Date(startY+1,2,31,23,59,59)};
+}
+function parseTxnDateFromLine(line){
+  const months={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
+  let m=String(line).match(/\b(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})\b/);
+  if(m){let y=Number(m[3]); if(y<100)y+=2000; return new Date(y,Number(m[2])-1,Number(m[1]));}
+  m=String(line).match(/\b(\d{1,2})[-\/]([A-Za-z]{3,4})[-\/](\d{2,4})\b/);
+  if(m){let y=Number(m[3]); if(y<100)y+=2000; const mo=months[m[2].toLowerCase()]; if(mo!==undefined)return new Date(y,mo,Number(m[1]));}
+  return null;
+}
+function isDateWithinCurrentFY(line){ const dt=parseTxnDateFromLine(line); if(!dt)return false; const fy=getCurrentFYRange(); return dt>=fy.start && dt<=fy.end; }
+function _isCreditLine(L){ return /\b(cr|credit|credited|deposit|deposited|dep\s*tfr|by\s*clearing|by\s*transfer|neft|imps|upi|rtgs|salary|interest|refund|cash)\b/i.test(L); }
+function _isDebitOnlyLine(L){ return /\b(dr|debit|withdrawal|withdrawn|wdl|atm|pos|purchase|emi|charges|fee|charges?|nefto)\b/i.test(L) && !/\b(cr|credit|deposit|credited|deposited|dep\s*tfr)\b/i.test(L); }
+function _looksLikeAmountToken(raw){
+  const token=String(raw||'').trim(); const compact=token.replace(/[,\s]/g,'');
+  if(!compact || !/^\d+(?:\.\d+)?$/.test(compact)) return false;
+  const hasMoneyFormatting=/[,\.₹]|\brs\.?\b|\binr\b/i.test(token);
+  if(!hasMoneyFormatting) return false;
+  const v=Number(compact); return v>0 && v<=BANK_TXN_MAX_REASONABLE;
+}
+function _amountsInLine(line){
+  const nums=[]; const rx=/(?:₹|rs\.?|inr)?\s*(-?\d{1,3}(?:[,\s]\d{2,3})+(?:\.\d+)?|-?\d{1,7}(?:\.\d{1,2})?)/gi; let m;
+  while((m=rx.exec(line))!==null){ const raw=m[0], valRaw=m[1]; if(!_looksLikeAmountToken(raw) && !_looksLikeAmountToken(valRaw))continue; const v=_numify(valRaw); if(v>0&&v<=BANK_TXN_MAX_REASONABLE)nums.push(v); }
+  return nums;
+}
+function _pickCreditAmount(line, nums){ if(!nums.length)return 0; if(nums.length>=3)return nums[nums.length-2]; return nums[0]; }
+function normalizeBankCreditSignature(line, amt){
+  const dt=parseTxnDateFromLine(line);
+  const d=dt?dt.toISOString().slice(0,10):'';
+  // Remove long reference numbers / UTRs so duplicated statement exports collapse.
+  const cleaned=String(line||'')
+    .toLowerCase()
+    .replace(/\d{8,}/g,'')
+    .replace(/[₹,\s]/g,'')
+    .slice(0,180);
+  return d+'|'+Math.round(Number(amt)||0)+'|'+cleaned;
+}
+function classifyBankCreditForTax(line){
+  const L=String(line||'').toLowerCase();
+  if(/interest\s*(credit|credited|paid|earned|received)|int\.?\s*(on|cr|pd)|savings?\s*interest|fd\s*interest/.test(L)) return {kind:'interest', taxable:false, reason:'Bank interest is extracted separately under Interest Income'};
+  if(/salary|payroll|wages|remuneration|stipend|consulting\s*fee|professional\s*fee|freelance|client\s*payment|invoice|business\s*receipt|shop|merchant|razorpay\s*settlement|cashfree\s*settlement|stripe|instamojo/.test(L)) return {kind:'taxable_bank_income', taxable:true, reason:'Narration indicates salary/business/professional receipt'};
+  if(/rent\s*(received|income)|tenant|lease\s*rent/.test(L)) return {kind:'taxable_bank_income', taxable:true, reason:'Narration indicates rent receipt'};
+  if(/dividend/.test(L)) return {kind:'dividend', taxable:false, reason:'Dividend should be reported separately if explicit amount is confirmed'};
+  if(/mutual\s*fund|\bmf\b|redemption|repurchase|switch|invesco|motilal|franklin|axis\s*mutual|sbi\s*mutual|icici\s*prudential|hdfc\s*mf|amc/.test(L)) return {kind:'investment_redemption', taxable:false, reason:'Only capital gain component is taxable, not redemption credit'};
+  if(/self|own\s*account|\bselfft\b|to\s+self|from\s+self|l\s*sethuraman|sethuraman\s*lakshminarayanan|sethuramanlakshmina|family|vaishnavi|sridhar|father|mother|wife|spouse|gift|loan|transfer|neft|imps|upi|rtgs/.test(L)) return {kind:'transfer_or_gift', taxable:false, reason:'Likely self/family transfer or gift; review but do not tax automatically'};
+  if(/refund|reversal|return|rtn|chargeback/.test(L)) return {kind:'refund_or_reversal', taxable:false, reason:'Refund/reversal is generally not income'};
+  if(/cash\s*(deposit|dep|cdm)|by\s*cash|cash\s*credited/.test(L)) return {kind:'cash_deposit_review', taxable:false, reason:'Cash deposit source must be reviewed; not taxed automatically'};
+  return {kind:'unclassified_credit_review', taxable:false, reason:'Unclassified credit; review source manually before taxing'};
+}
+function extractBankSummaryCredits(clean){
+  // Fallback for scanned/OCR statements where transaction rows are broken but summary totals are readable.
+  const T=String(clean||'').replace(/\s+/g,' ');
+  const patterns=[
+    /Total\s+Credits\s*\(?₹?\)?\s*([\d,]+(?:\.\d{1,2})?)/i,
+    /Cr\s+Count\s+Total\s+Debits\s*\(?₹?\)?\s+Total\s+Credits\s*\(?₹?\)?\s+Closing\s+Balance\s*\(?₹?\)?\s+[\d,]+\s+[\d,]+\s+[\d,]+(?:\.\d{1,2})?\s+([\d,]+(?:\.\d{1,2})?)/i,
+    /Statement\s+Summary[\s\S]{0,250}?Total\s+Credits\s*\(?₹?\)?\s*([\d,]+(?:\.\d{1,2})?)/i
+  ];
+  for(const rx of patterns){ const m=T.match(rx); if(m){const v=_numify(m[1]); if(v>0&&v<=BANK_TXN_MAX_REASONABLE)return Math.round(v);} }
+  // Axis style: TRANSACTION TOTAL <total debits> <total credits>
+  const ax=T.match(/TRANSACTION\s+TOTAL\s+([\d,]+(?:\.\d{1,2})?)\s+([\d,]+(?:\.\d{1,2})?)/i);
+  if(ax){ const v=_numify(ax[2]); if(v>0&&v<=BANK_TXN_MAX_REASONABLE)return Math.round(v); }
+  return 0;
+}
+function extractBankInterestFallback(clean){
+  const T=String(clean||'').replace(/\s+/g,' ');
+  let total=0, found=false;
+  // Axis: Int on SB AC [156.00] Tax[49.00] then net credit 107.00. Use bracketed gross interest.
+  const rx1=/Int\s+on\s+SB\s+AC\s*\[\s*([\d,]+(?:\.\d{1,2})?)\s*\]/gi; let m;
+  while((m=rx1.exec(T))!==null){ const v=_numify(m[1]); if(v>0&&v<1000000){ total+=v; found=true; } }
+  // Generic interest paid/credit lines: closest amount near the label.
+  if(!found){ const interest=_sumAllNear(clean,/interest\s*(?:credited|paid|earned|received)|int\.?\s*cr|int\.?\s*pd|int\s+on\s+sb\s+ac/i,100); if(interest!==null&&interest>0&&interest<=BANK_TXN_MAX_REASONABLE){total=interest; found=true;} }
+  return found?Math.round(total):0;
+}
+function extractBankStatement(T){
+  const out={bankEstimatedIncome:0,bankTaxableExcessCredit:0};
+  const clean=String(T||'').replace(/\r/g,'\n').replace(/[ \t]+/g,' ');
+  const fbInterest=extractBankInterestFallback(clean); if(fbInterest>0)out.interest=fbInterest;
+  // Split on date boundaries AND new lines. This handles PDF.js text, OCR text, and bank statements where one row spans multiple visual lines.
+  const chunks=clean.split(/\n|(?=\b\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}\b)|(?=\b\d{1,2}[-\/][A-Za-z]{3,4}[-\/]\d{2,4}\b)/).map(x=>x.trim()).filter(Boolean);
+  let creditTotal=0,cashDepositTotal=0,estimatedTaxable=0; const seen=new Set(); const rows=[];
+  for(const line of chunks){
+    if(!isDateWithinCurrentFY(line))continue; const L=line.toLowerCase();
+    if(/opening\s*balance|closing\s*balance|available\s*balance|balance\s*b\/f|balance\s*c\/f|statement\s*summary|account\s*number|customer\s*id|transaction\s*total|relationship\s*summary/i.test(L))continue;
+    if(!_isCreditLine(L)||_isDebitOnlyLine(L))continue;
+    const nums=_amountsInLine(line); if(!nums.length)continue; const amt=_pickCreditAmount(line,nums); if(!(amt>0&&amt<=BANK_TXN_MAX_REASONABLE))continue;
+    const sig=normalizeBankCreditSignature(line,amt); if(seen.has(sig))continue; seen.add(sig);
+    const cls=classifyBankCreditForTax(line);
+    creditTotal+=amt;
+    if(cls.taxable)estimatedTaxable+=amt;
+    if(cls.kind==='cash_deposit_review')cashDepositTotal+=amt;
+    rows.push({signature:sig,date:(parseTxnDateFromLine(line)||new Date(0)).toISOString().slice(0,10),amount:Math.round(amt),kind:cls.kind,taxable:cls.taxable,reason:cls.reason,line:String(line).slice(0,260)});
+  }
+  const summaryCredits=extractBankSummaryCredits(clean);
+  // Prefer parsed row total; if OCR row parsing fails, use bank-provided statement summary.
+  if(creditTotal===0 && summaryCredits>0){
+    creditTotal=summaryCredits;
+    rows.push({signature:'summary|'+summaryCredits,date:'',amount:summaryCredits,kind:'statement_summary_credit_total',taxable:false,reason:'Bank statement summary total credits; review only, not taxable by itself',line:'Statement summary total credits'});
+  }
+  if(creditTotal>0)out.bankTotalCredits=Math.round(creditTotal);
+  out.bankEstimatedIncome=Math.round(estimatedTaxable);
+  out.bankCredits12L=Math.max(0,Math.round((creditTotal||0)-BANK_CREDIT_REVIEW_LIMIT));
+  out.bankTaxableExcessCredit=0; // never auto-tax credits just because they cross ₹12L
+  if(cashDepositTotal>0)out.cashDepositReview=Math.round(cashDepositTotal);
+  if(rows.length)out._bankCreditRows=rows;
+  return out;
+}
+
+
+// ---- Insurance / investment premium certificates (health/life/PPF/ELSS/NPS) ----
+function extractPremium(T,type){
+  const out={};
+  const totalPrem=T.match(/(?:total\s*(?:amount)?\s*(?:received|paid)?\s*(?:towards)?\s*(?:premium|policies)[^0-9₹]{0,80})(₹|rs\.?|inr)?\s*(-?\d{1,3}(?:[,\s]\d{2,3})+(?:\.\d+)?|\d{3,})/i);
+  const anyPrem=T.match(/(?:has\s*paid|paid|premium(?:\s*amount)?|amount\s*received)[^0-9₹]{0,40}(₹|rs\.?|inr)\s*(-?\d{1,3}(?:[,\s]\d{2,3})+(?:\.\d+)?|\d{3,})/i);
+  const premVal=totalPrem?_numify(totalPrem[2]):(anyPrem?_numify(anyPrem[2]):0);
+  if(premVal>0){
+    if(type==='healthInsurance') out['80d']=premVal;
+    else if(type==='lifeInsurance'||type==='ppf'||type==='elss') out['80c']=premVal;
+    else if(type==='nps') out['80ccd1b']=premVal;
+  }
+  return out;
+}
+function extractHomeLoan(T){
+  const out={};
+  const hl=T.match(/interest[^0-9₹]{0,60}(?:₹|rs\.?|inr)\s*(-?\d{1,3}(?:[,\s]\d{2,3})+(?:\.\d+)?|\d{3,})/i);
+  if(hl) out['24b']=_numify(hl[1]);
+  return out;
+}
+
+async function extractText(f){
+  if(!f)return '';
+  const type=(f.type||'').toLowerCase();
+  const name=(f.name||'').toLowerCase();
+  try{
+    if(type.startsWith('text/')||name.endsWith('.txt')||name.endsWith('.csv')||name.endsWith('.json')||name.endsWith('.html')||name.endsWith('.htm')){
+      return new TextDecoder().decode(f.data);
+    }
+    if(type==='application/pdf'||name.endsWith('.pdf')){
+      if(window.pdfjsLib){
+        try{
+          const pdf=await pdfjsLib.getDocument({data:f.data.slice(0)}).promise;
+          let out='';
+          for(let i=1;i<=pdf.numPages;i++){
+            const pg=await pdf.getPage(i);
+            const tc=await pg.getTextContent();
+            out+=tc.items.map(it=>it.str).join(' ')+'\n';
+          }
+          if(out.trim())return out;
+        }catch(err){console.warn('pdf.js failed',err);}
+      }
+      // Fallback: try to pull literal strings from PDF text operators
+      const raw=new TextDecoder('latin1').decode(f.data);
+      const strs=[];const rx=/\(((?:\\.|[^\\()])*)\)\s*Tj/g;let m;
+      while((m=rx.exec(raw))!==null){strs.push(m[1].replace(/\\(.)/g,'$1'));}
+      if(strs.length)return strs.join(' ');
+      return raw.replace(/[^\x20-\x7E\n]/g,' ');
+    }
+    if(name.endsWith('.xlsx')||name.endsWith('.xls')||type.includes('spreadsheet')||type.includes('excel')){
+      if(window.XLSX){
+        const wb=XLSX.read(f.data,{type:'array'});
+        let out='';
+        wb.SheetNames.forEach(s=>{out+=XLSX.utils.sheet_to_csv(wb.Sheets[s])+'\n';});
+        return out;
+      }
+    }
+  }catch(e){console.warn('extractText error',e);}
+  return '';
+}
+
+// ---------- OCR fallback for scanned/image-only PDFs and photos ----------
+let _tesseractLoading=null;
+function loadTesseract(){
+  if(window.Tesseract) return Promise.resolve();
+  if(_tesseractLoading) return _tesseractLoading;
+  _tesseractLoading=new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js';
+    s.onload=res; s.onerror=()=>rej(new Error('tesseract load failed'));
+    document.head.appendChild(s);
+  });
+  return _tesseractLoading;
+}
+async function ocrFallback(f,label){
+  if(!f) return '';
+  const type=(f.type||'').toLowerCase(); const name=(f.name||'').toLowerCase();
+  const isPdf=type==='application/pdf'||name.endsWith('.pdf');
+  const isImg=type.startsWith('image/')||/\.(png|jpe?g|webp|bmp)$/.test(name);
+  if(!isPdf && !isImg) return '';
+  try{
+    toast('Scanned document detected — running OCR on '+(label||f.name||'file')+'…');
+    await loadTesseract();
+    if(!window.Tesseract) return '';
+    const worker=await Tesseract.createWorker('eng');
+    let out='';
+    if(isImg){
+      const blob=new Blob([f.data]);
+      const url=URL.createObjectURL(blob);
+      const {data}=await worker.recognize(url);
+      out=data.text||'';
+      URL.revokeObjectURL(url);
+    }else if(window.pdfjsLib){
+      const pdf=await pdfjsLib.getDocument({data:f.data.slice(0)}).promise;
+      const maxPages=Math.min(pdf.numPages,12);
+      for(let i=1;i<=maxPages;i++){
+        const pg=await pdf.getPage(i);
+        const viewport=pg.getViewport({scale:2});
+        const canvas=document.createElement('canvas');
+        canvas.width=viewport.width; canvas.height=viewport.height;
+        await pg.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+        const {data}=await worker.recognize(canvas);
+        out+=(data.text||'')+'\n';
+      }
+    }
+    await worker.terminate();
+    return out;
+  }catch(e){ console.warn('OCR failed',e); return ''; }
+}
+
+function scanText(text, filename, category){
+  const T=(text||'').replace(/[ \t]+/g,' ');
+  const type=classifyDoc(T, filename, category);
+  let out={};
+
+  // Doc-type-specific extraction runs FIRST so a mutual fund statement can never
+  // be misread as an 80C insurance premium, a bank statement as 80D, etc.
+  if(type==='mfCAS') Object.assign(out, extractCapitalGains(T));
+  else if(type==='bankStatement' || type.startsWith('bank_')) Object.assign(out, extractBankStatement(T));
+  else if(['healthInsurance','lifeInsurance','ppf','elss','nps'].includes(type)) Object.assign(out, extractPremium(T,type));
+  else if(type==='homeLoan') Object.assign(out, extractHomeLoan(T));
+
+  // Generic label-proximity scan fills in anything not already found (salary, TDS, HRA,
+  // LTA, dividend, rental, foreign income, advance/self-assessment tax, and 80C/80D/CG
+  // for documents that weren't confidently classified above).
+  const labels=[
+    ['salary',/gross\s*salary|salary\s*(?:income|paid|u\/s\s*17)|income\s*from\s*salary|salary\s*as\s*per\s*provisions|annual\s*(?:salary|ctc)|\bctc\b/i],
+    ['hra',/house\s*rent\s*allow|\bhra\b/i],
+    ['lta',/\blta\b|leave\s*travel/i],
+    ['tds',/\btds\b|tax\s*deducted\s*at\s*source|total\s*tax\s*deducted/i],
+    ['interest',/interest\s*(?:income|earned|paid|received|on\s*deposits|on\s*saving|from\s*fd|from\s*deposits)|savings?\s*bank\s*interest/i],
+    ['dividend',/dividend(?:\s*income|\s*received)?/i],
+    ['rental',/rent(?:al)?\s*(?:income|received)|annual\s*rent|income\s*from\s*house\s*property/i],
+    ['80c',/(?:deduction\s*u\/s\s*)?80\s*c\b|life\s*insurance\s*premium|lic\s*premium|ppf|elss|sukanya|nsc\b|tuition\s*fee|principal\s*repayment/i],
+    ['80ccd1b',/80\s*ccd\s*\(?\s*1b\s*\)?|\bnps\b/i],
+    ['80d',/(?:deduction\s*u\/s\s*)?80\s*d\b|(?:health|medical|mediclaim|hospitali[sz]ation)\s*insurance\s*premium|premium\s*(?:certificate|paid).{0,60}(?:health|hospitali)|health\s*insurance/i],
+    ['24b',/section\s*24\s*\(?b\)?|home\s*loan\s*interest|interest\s*on\s*(?:housing|home)\s*loan/i],
+    ['stcg',/short[\s-]*term\s*capital\s*gain/i],
+    ['ltcg',/long[\s-]*term\s*capital\s*gain/i],
+    ['advanceTax',/advance\s*tax/i],
+    ['selfAssessment',/self[\s-]*assessment\s*tax/i],
+    ['foreign',/foreign\s*(?:salary|income|remuneration)/i],
+  ];
+  for(const [k,rx] of labels){
+    if(out[k]!==undefined) continue; // don't let the generic scan override a type-specific result
+    // Skip 80c/80d/stcg/ltcg generic guesses on documents that were confidently classified
+    // as something else entirely (e.g. a bank statement mentioning "capital gain" in a footnote)
+    if(['80c','80ccd1b','80d','stcg','ltcg','24b'].includes(k) && ['mfCAS','bankStatement'].includes(type)) continue;
+    const rxG=new RegExp(rx.source,rx.flags.includes('g')?rx.flags:rx.flags+'g');
+    let m,best=null;
+    while((m=rxG.exec(T))!==null){
+      const c=_closestNumber(T, m.index+Math.floor(m[0].length/2), 300);
+      if(c && (best===null || c.d<best.d)) best=c;
+    }
+    if(best) out[k]=best.v;
+  }
+
+  // Salary.txt style: "For INR - 191797" (monthly → *12)
+  if(out.salary===undefined){
+    const inr=T.match(/INR\s*[-:]?\s*(\d{4,})/i);
+    if(inr){
+      let sv=Number(inr[1]);
+      if(/monthly|per\s*month|\/mo\b|month/i.test(T)) sv=sv*12;
+      out['salary']=sv;
+    }
+  }
+
+  // Salary source normalization: MYR/RM/Malaysia salary must never fill Indian salary for NRI.
+  if(out.salary!==undefined){ const src=classifySalarySource(T, filename, category); if(type==='foreignSalary'||src==='salary_foreign')out.salary_foreign=out.salary; else out.salary_india=out.salary; delete out.salary; }
+  if(out.salary_india===undefined && out.salary_foreign===undefined){ const m=T.match(/(?:MYR|RM)\s*[-:]?\s*(\d{3,}(?:\.\d+)?)/i); if(m){let v=Number(m[1]); if(/month|monthly|bulan|per\s*month/i.test(T))v*=12; out.salary_foreign=Math.round(v);} }
+  return {fields:out, docType:type};
+}
+function applyExtractToTax(extract, mode='add'){
+  const d=curData();if(!d)return 0;
+  if(!d.tax)d.tax={};
+  let applied=0;
+  for(const [ek,val] of Object.entries(extract)){
+    const field=EXTRACT_MAP[ek];if(!field||!val)continue;
+    if(mode==='set') d.tax[field]=Math.round(val);
+    else d.tax[field]=(Number(d.tax[field])||0)+Math.round(val);
+    applied++;
+  }
+  if(applied){saveAll();loadTaxForm();}
+  return applied;
+}
+async function analyzeDoc(){
+  const f=await idbGet(openDocId);if(!f){toast('No file');return}
+  const d=curData();const x=d.docs.find(o=>o.id===openDocId);
+  let text=await extractText(f);
+  if(!text||text.trim().length<20) text=(await ocrFallback(f,x.name))||text;
+  if(!text){toast('Unsupported / unreadable file (scanned image with no OCR match)');return}
+  const {fields:extract,docType}=scanText(text, x.name, x.category);
+  x.notes=(x.notes||'')+'\n[AI extract '+new Date().toLocaleDateString()+'] type='+docType+' '+JSON.stringify(extract);
+  x.status='Verified';saveAll();
+  const preview=Object.keys(extract).length?JSON.stringify(extract,null,2):'(nothing recognised)';
+  const ok = Object.keys(extract).length && confirm('Detected document type: '+(DOC_TYPE_LABEL[docType]||docType)+'\n\nExtracted from '+x.name+':\n\n'+preview+'\n\nAdd these values to Tax Computation (added to existing)?');
+  if(ok){
+    const n=applyExtractToTax(extract,'add');
+    logAct('Auto-filled '+n+' tax field(s) from '+x.name);
+    toast('Applied '+n+' field(s) — verify in Tax Computation');
+  }
+  renderAll();closeDoc();
+}
+
+// ---------- Auto-Fill from All Documents: scan → classify → extract → REVIEW → apply ----------
+let REVIEW_ROWS=[];
+async function autoFillFromDocs(){
+  const d=curData();if(!d||!d.docs.length){toast('No documents');return}
+  if(!confirm('Scan '+d.docs.length+' document(s) for salary, interest, dividends, capital gains, 80C/80D/24B deductions, TDS, etc.? You will be able to review and edit every value before it is applied.'))return;
+  toast('Scanning '+d.docs.length+' document(s)…');
+  let scanned=0, skipped=0, empty=0; const perDoc=[];
+  for(const x of d.docs){
+    const f=await idbGet(x.id);
+    let text=await extractText(f);
+    if(!text||text.trim().length<20) text=(await ocrFallback(f,x.name))||text;
+    if(!text||!text.trim()){ skipped++; perDoc.push({doc:x,type:null,fields:{},status:'skipped'}); continue; }
+    scanned++;
+    const {fields,docType}=scanText(text, x.name, x.category);
+    if(!Object.keys(fields).length){ empty++; perDoc.push({doc:x,type:docType,fields:{},status:'empty'}); }
+    else perDoc.push({doc:x,type:docType,fields,status:'ok'});
+    x.notes=(x.notes||'')+'\n[Auto '+new Date().toLocaleDateString()+'] type='+docType+' '+JSON.stringify(fields);
+    if(x.status==='Uploaded')x.status='Verified';
+  }
+  consolidateBankExtractions(perDoc);
+  saveAll();renderAll();
+  logAct('Auto-Fill scanned '+scanned+' docs ('+skipped+' skipped, '+empty+' no fields)');
+  openReviewModal(perDoc, scanned, skipped, empty, d.docs.length);
+}
+function consolidateBankExtractions(perDoc){
+  // Aggregates ALL uploaded bank statements for the selected FY and removes duplicated statement rows.
+  // Indian tax rule: total bank credits are a review metric only; they are NOT taxable merely because they exceed ₹12 lakh.
+  const all=[];
+  perDoc.forEach(pd=>{
+    const rows=(pd.fields&&pd.fields._bankCreditRows)||[];
+    if(rows.length){
+      rows.forEach(r=>all.push({...r,doc:pd.doc.name}));
+    }else if(pd.type==='bankStatement' && pd.fields && (pd.fields.bankTotalCredits||0)>0){
+      // Fallback when only statement summary total could be extracted.
+      all.push({signature:'summary|'+pd.doc.name+'|'+pd.fields.bankTotalCredits,doc:pd.doc.name,date:'',amount:Math.round(pd.fields.bankTotalCredits),kind:'statement_summary_credit_total',taxable:false,reason:'Bank summary total; review only'});
+    }
+    if(pd.fields) delete pd.fields._bankCreditRows;
+  });
+  if(!all.length) return;
+  const seen=new Set(); let total=0,estTaxable=0,cash=0; const byDoc={};
+  for(const r of all){
+    const sig=r.signature||(`${r.date}|${r.amount}|${r.line||''}`);
+    if(seen.has(sig))continue; seen.add(sig);
+    const amt=Number(r.amount)||0;
+    total+=amt;
+    if(r.taxable)estTaxable+=amt;
+    if(r.kind==='cash_deposit_review')cash+=amt;
+    byDoc[r.doc]=(byDoc[r.doc]||0)+amt;
+  }
+  // Make a synthetic review row so the user sees one combined total instead of one-bank-only output.
+  perDoc.unshift({
+    doc:{name:'All bank statements — consolidated FY credit review'},
+    type:'bankStatement',
+    status:'ok',
+    fields:{
+      bankTotalCredits:Math.round(total),
+      bankCredits12L:Math.max(0,Math.round(total-BANK_CREDIT_REVIEW_LIMIT)),
+      bankEstimatedIncome:Math.round(estTaxable),
+      bankTaxableExcessCredit:0,
+      ...(cash>0?{cashDepositReview:Math.round(cash)}:{})
+    },
+    isBankConsolidated:true,
+    bankDocCount:Object.keys(byDoc).length
+  });
+  // Remove per-bank totals from individual docs to avoid double counting when Apply is clicked.
+  perDoc.forEach(pd=>{
+    if(pd.isBankConsolidated || !pd.fields) return;
+    if(pd.type==='bankStatement'){
+      pd.bankIncludedInConsolidated=true;
+      pd.bankIncludedTotal=Math.round(byDoc[pd.doc.name]||0);
+      delete pd.fields.bankTotalCredits;
+      delete pd.fields.bankCredits12L;
+      delete pd.fields.bankEstimatedIncome;
+      delete pd.fields.bankTaxableExcessCredit;
+      delete pd.fields.cashDepositReview;
+    }
+  });
+}
+
+function openReviewModal(perDoc, scanned, skipped, empty, totalDocs){
+  REVIEW_ROWS=[];
+  const trs=[];
+  perDoc.forEach((pd)=>{
+    const entries=Object.entries(pd.fields).filter(([k])=>EXTRACT_MAP[k]);
+    if(!entries.length){
+      let msg = pd.status==='skipped' ? 'Unreadable / scanned image — no text could be extracted' : 'No recognisable financial fields';
+      if(pd.bankIncludedInConsolidated){
+        msg = 'Included in consolidated bank credit review' + (pd.bankIncludedTotal?(' — detected credits ₹'+pd.bankIncludedTotal.toLocaleString('en-IN')):'');
+      }
+      trs.push(`<tr><td></td><td>${pd.doc.name}</td><td>${DOC_TYPE_LABEL[pd.type]||pd.type||'—'}</td><td colspan="2" style="color:var(--mut)">${msg}</td></tr>`);
+      return;
+    }
+    entries.forEach(([k,v])=>{
+      const field=EXTRACT_MAP[k];
+      const labelDef=[...TAX_FIELDS_INCOME,...TAX_FIELDS_DED,...TAX_FIELDS_PAID].find(t=>t[0]===field);
+      const ri=REVIEW_ROWS.length;
+      REVIEW_ROWS.push({doc:pd.doc.name,type:pd.type,field});
+      trs.push(`<tr>
+        <td><input type="checkbox" class="rv-inc" checked data-ri="${ri}"></td>
+        <td>${pd.doc.name}</td>
+        <td>${DOC_TYPE_LABEL[pd.type]||pd.type}</td>
+        <td>${labelDef?labelDef[1]:field}</td>
+        <td><input type="number" class="rv-val" style="width:120px" value="${Math.round(v)}" data-ri="${ri}"></td>
+      </tr>`);
+    });
+  });
+  document.getElementById('reviewBody').innerHTML = trs.join('') || '<tr><td colspan="5">No fields extracted from any document.</td></tr>';
+  const bankConsolidated = perDoc.some(pd=>pd.isBankConsolidated);
+  document.getElementById('reviewSummary').textContent =
+    `Documents read: ${scanned} / ${totalDocs} (skipped ${skipped}, no fields ${empty}). ${bankConsolidated?'Multiple bank statements were consolidated into one FY bank-credit review row. ':''}Uncheck or edit any row that looks wrong, choose Set or Add below, then apply.`;
+  document.getElementById('reviewModal').classList.add('show');
+}
+function closeReview(){ document.getElementById('reviewModal').classList.remove('show'); }
+function applyReview(){
+  const mode=document.querySelector('input[name="rvMode"]:checked').value;
+  const totals={};
+  document.querySelectorAll('#reviewBody .rv-inc').forEach(cb=>{
+    if(!cb.checked)return;
+    const ri=cb.dataset.ri; const row=REVIEW_ROWS[ri]; if(!row)return;
+    const valInput=document.querySelector(`.rv-val[data-ri="${ri}"]`);
+    const v=Number(valInput.value)||0;
+    totals[row.field]=(totals[row.field]||0)+v;
+  });
+  const d=curData();if(!d){closeReview();return}
+  if(!d.tax)d.tax={};
+  let applied=0;
+  for(const [field,val] of Object.entries(totals)){
+    if(mode==='set') d.tax[field]=Math.round(val);
+    else d.tax[field]=(Number(d.tax[field])||0)+Math.round(val);
+    applied++;
+  }
+  saveAll();loadTaxForm();renderAll();
+  logAct('Auto-Fill applied '+applied+' tax field(s) after review ('+mode+')');
+  toast('Applied '+applied+' field(s) to Tax Computation');
+  closeReview();
+}
+
+
+// ---------- Bulk cleanup / reset helpers ----------
+function resetTaxCache(){ const d=curData(); if(!d)return; if(!confirm('Reset all Tax Computation fields and computed summary for this FY? Documents will not be deleted.'))return; const res=getResidency(); d.tax={residency:res}; delete d.summary; saveAll(); loadTaxForm(); renderAll(); toast('Tax Computation cache reset'); }
+async function removeAllDocuments(){ const d=curData(); if(!d||!d.docs.length){toast('No documents to remove');return;} if(!confirm('Remove ALL documents for this FY? This deletes file data and document metadata, but keeps tax inputs.'))return; for(const x of d.docs){ await idbDel(x.id); } d.docs=[]; saveAll(); renderAll(); toast('All documents removed'); }
+
+// ---------- Checklist ----------
+function renderChecklist(){
+  const d=curData();if(!d)return;
+  const res=getResidency();
+  const wrap=document.getElementById('checklistView');
+  const resLabel={ROR:'Resident (ROR)',RNOR:'RNOR',NRI:'Non-Resident (NRI)'}[res];
+  let html=`<div style="margin-bottom:10px;color:var(--mut);font-size:12px">Filtered for residency: <b style="color:var(--txt)">${resLabel}</b> — items not applicable to this status are hidden.</div>`;
+  let total=0,done=0;
+  for(const [cat,items] of Object.entries(CATEGORIES)){
+    const visible=items.filter(it=>itemApplies(it,res));
+    if(!visible.length)continue;
+    html+=`<details open style="margin-bottom:8px"><summary style="cursor:pointer;font-weight:600;padding:8px 4px">${cat} <span style="color:var(--mut);font-size:12px">(${visible.length})</span></summary>`;
+    for(const it of visible){
+      total++;
+      const has=d.docs.some(x=>x.category===it);
+      const ck=d.checklist[it]||(has?'Uploaded':'Missing');
+      if(has)done++;
+      html+=`<div class="cat">
+        <div><b>${it}</b><div style="font-size:11px;color:var(--mut)">${has?d.docs.filter(x=>x.category===it).length+' file(s) attached':'No file attached'}</div></div>
+        <div class="row">
+          <select onchange="setCk('${it}',this.value)">
+            ${['Missing','Pending','Uploaded','Verified','Submitted'].map(s=>`<option ${ck===s?'selected':''}>${s}</option>`).join('')}
+          </select>
+          <span class="status ${ck.toLowerCase()}">${ck}</span>
+        </div></div>`;
+    }
+    html+='</details>';
+  }
+  wrap.innerHTML=html;
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('readyPct').textContent=pct+'%';
+  document.getElementById('readyBar').style.width=pct+'%';
+  const st=document.getElementById('readyStatus');
+  st.textContent= pct>=80?'Ready to file':pct>=50?'Almost ready':'Not ready';
+  st.className='status '+(pct>=80?'verified':pct>=50?'uploaded':'missing');
+}
+function setCk(item,v){const d=curData();d.checklist[item]=v;saveAll();renderAll()}
+
+// ---------- Tax Computation ----------
+function buildTaxForm(){
+  const incF=document.getElementById('incomeFields'),dedF=document.getElementById('dedFields'),paidF=document.getElementById('paidFields');
+  const mkRow=(k,l)=>`<label>${l}</label><input type="number" id="tx_${k}" oninput="saveTax()" placeholder="0">`;
+  incF.innerHTML=TAX_FIELDS_INCOME.map(([k,l])=>mkRow(k,l)).join('');
+  dedF.innerHTML=TAX_FIELDS_DED.map(([k,l])=>mkRow(k,l)).join('');
+  paidF.innerHTML=TAX_FIELDS_PAID.map(([k,l])=>mkRow(k,l)).join('');
+  document.getElementById('taxAge').oninput=saveTax;document.getElementById('metroCity').oninput=saveTax;
+}
+function loadTaxForm(){
+  const t=(curData()?.tax)||{};
+  [...TAX_FIELDS_INCOME,...TAX_FIELDS_DED,...TAX_FIELDS_PAID].forEach(([k])=>{const e=document.getElementById('tx_'+k);if(e)e.value=t[k]??''});
+  document.getElementById('taxAge').value=t.age||'below60';
+  document.getElementById('metroCity').value=t.metro||'yes';
+}
+function saveTax(){
+  const d=curData();if(!d)return;const t={};
+  [...TAX_FIELDS_INCOME,...TAX_FIELDS_DED,...TAX_FIELDS_PAID].forEach(([k])=>{const v=Number(document.getElementById('tx_'+k)?.value||0);if(v)t[k]=v});
+  t.age=document.getElementById('taxAge').value;t.metro=document.getElementById('metroCity').value;
+  t.residency=(d.tax&&d.tax.residency)||'ROR';
+  d.tax=t;saveAll();
+}
+function getResidency(){const d=curData();return (d&&d.tax&&d.tax.residency)||'ROR'}
+function setResidency(v){
+  const d=curData();if(!d)return;
+  if(!d.tax)d.tax={};
+  d.tax.residency=v;saveAll();
+  logAct('Residency set to '+v);
+  renderAll();
+  toast('Residency: '+v);
+}
+
+function slabTaxOld(ti,age){
+  let basic= age==='super'?500000: age==='senior'?300000:250000;
+  let tax=0;let rem=ti;
+  const slabs=[[basic,0],[500000,0.05],[500000,0.20],[Infinity,0.30]];
+  let prev=0;
+  // slabs are widths; compute properly
+  let bands=[];
+  if(age==='super'){bands=[[500000,0],[1000000,0.20],[Infinity,0.30]]}
+  else if(age==='senior'){bands=[[300000,0],[500000,0.05],[1000000,0.20],[Infinity,0.30]]}
+  else{bands=[[250000,0],[500000,0.05],[1000000,0.20],[Infinity,0.30]]}
+  let cum=0;
+  for(const [upto,rate] of bands){
+    if(ti<=cum)break;
+    const taxable=Math.min(ti,upto)-cum;
+    tax+=taxable*rate;
+    cum=upto;
+  }
+  return tax;
+}
+function slabTaxNew(ti){
+  // FY 2024-25 / 2025-26 new regime slabs
+  const bands=[[300000,0],[700000,0.05],[1000000,0.10],[1200000,0.15],[1500000,0.20],[Infinity,0.30]];
+  let tax=0,cum=0;
+  for(const [upto,rate] of bands){
+    if(ti<=cum)break;
+    const taxable=Math.min(ti,upto)-cum;
+    tax+=taxable*rate;cum=upto;
+  }
+  return tax;
+}
+function surcharge(ti,tax,regime){
+  let rate=0;
+  if(ti>5e7)rate=regime==='new'?0.25:0.37;
+  else if(ti>2e7)rate=0.25;
+  else if(ti>1e7)rate=0.15;
+  else if(ti>5e6)rate=0.10;
+  return tax*rate;
+}
+function rebate87A(ti,tax,regime){
+  if(regime==='new' && ti<=700000) return Math.min(tax,25000);
+  if(regime==='old' && ti<=500000) return Math.min(tax,12500);
+  return 0;
+}
+
+function computeTax(){
+  saveTax();
+  const t=curData().tax||{};
+  const res=t.residency||'ROR';
+  // Residency: NRI is taxed only on Indian-source income; foreign income excluded.
+  //            RNOR: foreign income NOT taxable unless from business controlled in India — excluded here.
+  //            ROR: worldwide income.
+  const salaryIndia=(t.salary_india||0)+(t.salary||0);
+  const salaryForeign=(t.salary_foreign||0);
+  const taxableSalary=salaryIndia+(res==='ROR'?salaryForeign:0);
+  const foreignInc = (res==='ROR') ? ((t.foreign||0)+salaryForeign) : 0;
+  const bankEstimatedIncome=(t.bankEstimatedIncome||0);
+  const bankTaxableExcessCredit=(t.bankTaxableExcessCredit||0); // manually confirmed taxable credits only; never auto-populated from the ₹12L review threshold
+  const inc = taxableSalary+(t.interest||0)+(t.rental||0)+(t.dividend||0)+(t.business||0)+foreignInc+(t.other||0)+bankEstimatedIncome+bankTaxableExcessCredit;
+  const excludedSalaryForResidency=(res==='ROR')?0:salaryForeign;
+  const stcg=t.stcg||0, ltcg=t.ltcg||0;
+  // LTCG 1L exemption is available to NRIs too on listed equity (Sec 112A)
+  const ltcgTaxable=Math.max(0,ltcg-100000);
+
+  // OLD regime deductions — NRIs cannot claim 80TTA (savings interest) and several others
+  const allow80tta = (res==='ROR' || res==='RNOR') ? (t.d80tta||0) : 0;
+  const dedOld = Math.min(150000,t.d80c||0)+Math.min(50000,t.d80ccd1b||0)+(t.d80d||0)+Math.min(200000,t.d24b||0)+(t.hra||0)+(t.lta||0)+(t.d80g||0)+allow80tta+(t.otherDed||0);
+  const standardDed = taxableSalary>0?50000:0;
+  const tiOld = Math.max(0, inc - dedOld - standardDed);
+  let taxOld = slabTaxOld(tiOld,t.age||'below60') + stcg*0.15 + ltcgTaxable*0.10;
+  // Rebate 87A: NOT available to NRIs
+  const rebOld = (res==='NRI') ? 0 : rebate87A(tiOld+stcg+ltcgTaxable,taxOld,'old');
+  taxOld = Math.max(0, taxOld - rebOld);
+  const surOld = surcharge(tiOld+stcg+ltcgTaxable, taxOld,'old');
+  const cessOld = (taxOld+surOld)*0.04;
+  const totOld = taxOld+surOld+cessOld;
+
+  // NEW regime: only standard ded 75k (FY25-26)
+  const sdNew = taxableSalary>0?75000:0;
+  const tiNew = Math.max(0, inc - sdNew);
+  let taxNew = slabTaxNew(tiNew) + stcg*0.15 + ltcgTaxable*0.10;
+  const rebNew = (res==='NRI') ? 0 : rebate87A(tiNew+stcg+ltcgTaxable,taxNew,'new');
+  taxNew = Math.max(0, taxNew - rebNew);
+  const surNew = surcharge(tiNew+stcg+ltcgTaxable, taxNew,'new');
+  const cessNew = (taxNew+surNew)*0.04;
+  const totNew = taxNew+surNew+cessNew;
+
+  const paid=(t.tds||0)+(t.advance||0)+(t.sat||0);
+  const fmt=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+
+  document.getElementById('oldCard').innerHTML=`<h4>Old Regime</h4><div class="v">${fmt(totOld)}</div><div class="sub">Taxable: ${fmt(tiOld)}</div>`;
+  document.getElementById('newCard').innerHTML=`<h4>New Regime</h4><div class="v">${fmt(totNew)}</div><div class="sub">Taxable: ${fmt(tiNew)}</div>`;
+  const better = totOld<totNew?'Old':'New';
+  const saving = Math.abs(totOld-totNew);
+  const resNote={ROR:'ROR — worldwide income taxable, all deductions & 87A available.',RNOR:'RNOR — foreign income excluded (unless from Indian-controlled business).',NRI:'NRI — only Indian-source income; no 80TTA; no rebate 87A.'}[res];
+  document.getElementById('recoBox').innerHTML=`<div class="warn" style="background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.4);color:#86efac">✅ Recommended: <b>${better} Regime</b> — saves ${fmt(saving)}</div><div style="margin-top:6px;color:var(--mut);font-size:12px">Residency applied: <b>${res}</b> — ${resNote}</div>`;
+
+  const rows=[
+    ['Gross Income (incl. CG)',inc+stcg+ltcg,inc+stcg+ltcg],
+    ['Foreign/MYR salary excluded by residency',excludedSalaryForResidency,excludedSalaryForResidency],
+    ['Estimated taxable bank credits included',bankEstimatedIncome+bankTaxableExcessCredit,bankEstimatedIncome+bankTaxableExcessCredit],
+    ['Total bank credits detected across banks (review only)',t.bankTotalCredits||0,t.bankTotalCredits||0],
+    ['Bank credits above ₹12L review — not taxable by itself',t.bankCredits12L||0,t.bankCredits12L||0],
+    ['Standard Deduction',standardDed,sdNew],
+    ['Deductions (Ch VI-A etc.)',dedOld,0],
+    ['Taxable Income',tiOld+stcg+ltcgTaxable,tiNew+stcg+ltcgTaxable],
+    ['Tax Before Rebate',taxOld+rebOld,taxNew+rebNew],
+    ['Rebate u/s 87A',rebOld,rebNew],
+    ['Surcharge',surOld,surNew],
+    ['Health & Education Cess (4%)',cessOld,cessNew],
+    ['Total Tax Liability',totOld,totNew],
+  ];
+  document.querySelector('#taxBreakdown tbody').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td>${fmt(r[1])}</td><td>${fmt(r[2])}</td></tr>`).join('');
+
+  const totRec = Math.min(totOld,totNew);
+  const bal = totRec - paid;
+  document.getElementById('finalCards').innerHTML=[
+    ['Estimated Tax Payable',fmt(totRec)],
+    ['TDS + Advance + SAT Paid',fmt(paid)],
+    bal>=0?['Balance Tax to Pay',fmt(bal)]:['Estimated Refund',fmt(-bal)],
+    ['Best Regime',better],
+  ].map(c=>`<div class="card"><h4>${c[0]}</h4><div class="v">${c[1]}</div></div>`).join('');
+
+  // store summary for dashboard
+  const d=curData();d.summary={inc,totRec,paid,bal,better,totOld,totNew,dedOld};saveAll();
+  renderDash();
+}
+
+// ---------- Calculators ----------
+function calcHRA(){
+  const b=+hraBasic.value||0,h=+hraRcv.value||0,r=+hraRent.value||0,m=+hraMetro.value;
+  const e1=h, e2=r-0.1*b, e3=(m?0.5:0.4)*b;
+  const ex=Math.max(0,Math.min(e1,e2,e3));
+  hraOut.innerHTML=`Exemption: <b>₹${ex.toLocaleString('en-IN')}</b>`;
+}
+function calcCG(){
+  const s=+cgSale.value||0,c=+cgCost.value||0,h=+cgHold.value||0;
+  const g=s-c;const lt=h>=12;
+  const tax= lt? Math.max(0,g-100000)*0.10 : g*0.15;
+  cgOut.innerHTML=`${lt?'LTCG':'STCG'} Gain: ₹${g.toLocaleString('en-IN')} · Tax: <b>₹${Math.round(tax).toLocaleString('en-IN')}</b>`;
+}
+function calcIDX(){
+  const b=+idxBuy.value,s=+idxSale.value,cb=+idxCb.value,cs=+idxCs.value;
+  const idx=b*cs/cb;const g=s-idx;const tax=Math.max(0,g)*0.20;
+  idxOut.innerHTML=`Indexed cost: ₹${Math.round(idx).toLocaleString('en-IN')} · Gain: ₹${Math.round(g).toLocaleString('en-IN')} · Tax @20%: <b>₹${Math.round(tax).toLocaleString('en-IN')}</b>`;
+}
+function calcHL(){
+  const i=+hlInt.value||0,p=+hlPrin.value||0,t=hlType.value;
+  const intDed= t==='self'?Math.min(i,200000):i;
+  const prinDed=Math.min(p,150000);
+  hlOut.innerHTML=`24(b) Interest: ₹${intDed.toLocaleString('en-IN')} · 80C Principal: ₹${prinDed.toLocaleString('en-IN')}`;
+}
+function calcNPS(){
+  const s=+npsSelf.value||0,e=+npsEmp.value||0;
+  npsOut.innerHTML=`80C-eligible (self up to 1.5L w/ other 80C): ₹${Math.min(s,150000).toLocaleString('en-IN')}<br>80CCD(1B) extra: ₹${Math.min(s,50000).toLocaleString('en-IN')}<br>80CCD(2) Employer: ₹${e.toLocaleString('en-IN')}`;
+}
+function calc80C(){
+  const t=[c1,c2,c3,c4,c5,c6].reduce((a,b)=>a+(+b.value||0),0);
+  const used=Math.min(t,150000);const left=Math.max(0,150000-t);
+  c80Out.innerHTML=`Total claimed: ₹${t.toLocaleString('en-IN')} · Eligible: <b>₹${used.toLocaleString('en-IN')}</b> · Room left: ₹${left.toLocaleString('en-IN')}`;
+}
+function calcInt(){
+  const s=+intSav.value||0,f=+intFd.value||0,sr=+intSr.value;
+  const limit=sr?50000:10000;const total=s+f;
+  const exempt=sr?Math.min(total,50000):Math.min(s,10000);
+  intOut.innerHTML=`Total Interest: ₹${total.toLocaleString('en-IN')} · Exempt (${sr?'80TTB':'80TTA'}): <b>₹${exempt.toLocaleString('en-IN')}</b> · Taxable: ₹${(total-exempt).toLocaleString('en-IN')}`;
+}
+function calcAdv(){
+  const t=+advT.value||0,d=+advTds.value||0;const due=Math.max(0,t-d);
+  const sch=[['15 Jun',0.15],['15 Sep',0.45],['15 Dec',0.75],['15 Mar',1.00]];
+  advOut.innerHTML=`Net liability after TDS: <b>₹${due.toLocaleString('en-IN')}</b><br>`+sch.map(([d_,p])=>`By ${d_}: ₹${Math.round(due*p).toLocaleString('en-IN')} (${p*100}%)`).join('<br>');
+}
+
+// ---------- Reports ----------
+function report(type){
+  const d=curData();const t=d.tax||{};const s=d.summary||{};
+  const fmt=n=>'₹'+Math.round(n||0).toLocaleString('en-IN');
+  let h='';
+  if(type==='income'){
+    h=`<h3>Income Summary — ${curYear().name}</h3><table>${TAX_FIELDS_INCOME.map(([k,l])=>`<tr><td>${l}</td><td>${fmt(t[k])}</td></tr>`).join('')}</table>`;
+  } else if(type==='investment'){
+    const inv=d.docs.filter(x=>['Mutual Fund Statements','SIP Statements','Demat Statements','Equity Statements','Bond Investments','ETFs','Gold Investments','PPF','ELSS','NPS','LIC','ULIPs','NSC','Sukanya Samriddhi'].includes(x.category));
+    h=`<h3>Investment Summary</h3><table><thead><tr><th>Name</th><th>Category</th><th>Status</th></tr></thead>${inv.map(x=>`<tr><td>${x.name}</td><td>${x.category}</td><td>${x.status}</td></tr>`).join('')}</table>`;
+  } else if(type==='cg'){
+    h=`<h3>Capital Gains Summary</h3><table><tr><td>STCG</td><td>${fmt(t.stcg)}</td></tr><tr><td>LTCG (gross)</td><td>${fmt(t.ltcg)}</td></tr><tr><td>LTCG Taxable (>1L)</td><td>${fmt(Math.max(0,(t.ltcg||0)-100000))}</td></tr></table>`;
+  } else if(type==='ded'){
+    h=`<h3>Deduction Summary</h3><table>${TAX_FIELDS_DED.map(([k,l])=>`<tr><td>${l}</td><td>${fmt(t[k])}</td></tr>`).join('')}</table>`;
+  } else if(type==='annual'){
+    h=`<h3>Annual Tax Report — ${curYear().name}</h3>
+    <table>
+      <tr><td>Total Income</td><td>${fmt(s.inc)}</td></tr>
+      <tr><td>Old Regime Tax</td><td>${fmt(s.totOld)}</td></tr>
+      <tr><td>New Regime Tax</td><td>${fmt(s.totNew)}</td></tr>
+      <tr><td>Recommended Regime</td><td>${s.better||'—'}</td></tr>
+      <tr><td>Taxes Paid</td><td>${fmt(s.paid)}</td></tr>
+      <tr><td>${(s.bal||0)>=0?'Balance Payable':'Refund'}</td><td>${fmt(Math.abs(s.bal||0))}</td></tr>
+    </table>`;
+  } else if(type==='filing'){
+    let total=0,done=0;Object.values(CATEGORIES).flat().forEach(i=>{total++;if(d.docs.some(x=>x.category===i))done++});
+    h=`<h3>Filing Readiness Report</h3><p>Completion: <b>${Math.round(done/total*100)}%</b> (${done}/${total})</p>
+    <table><thead><tr><th>Category</th><th>Status</th></tr></thead>
+    ${Object.values(CATEGORIES).flat().map(i=>`<tr><td>${i}</td><td>${d.docs.some(x=>x.category===i)?'✅ Attached':'❌ Missing'}</td></tr>`).join('')}
+    </table>`;
+  }
+  document.getElementById('reportOut').innerHTML=h;
+}
+function exportJSON(){const blob=new Blob([JSON.stringify({years:state.years,data:state.data},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='taxvault-'+(curYear()?.name||'export')+'.json';a.click()}
+function exportCSV(){
+  const d=curData();const rows=[['Name','Category','Status','Size','Uploaded','Tags','Notes']];
+  d.docs.forEach(x=>rows.push([x.name,x.category,x.status,x.size,new Date(x.uploadedAt).toISOString(),(x.tags||[]).join('|'),(x.notes||'').replace(/\n/g,' ')]));
+  const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='documents.csv';a.click();
+}
+function exportXLSX(){
+  const d=curData();const t=d.tax||{};
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(d.docs.map(x=>({name:x.name,category:x.category,status:x.status,size:x.size,uploaded:new Date(x.uploadedAt).toISOString()}))),'Documents');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet([...TAX_FIELDS_INCOME,...TAX_FIELDS_DED,...TAX_FIELDS_PAID].map(([k,l])=>({field:l,value:t[k]||0}))),'TaxInputs');
+  if(d.summary)XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet([d.summary]),'Summary');
+  XLSX.writeFile(wb,'taxvault-'+(curYear()?.name||'')+'.xlsx');
+}
+function exportPDF(){
+  const {jsPDF}=window.jspdf;const doc=new jsPDF();
+  doc.setFontSize(16);doc.text('TaxVault Report — '+(curYear()?.name||''),14,18);
+  doc.setFontSize(10);doc.text('Generated '+new Date().toLocaleString(),14,25);
+  const out=document.getElementById('reportOut').innerText||'Run a report first.';
+  const lines=doc.splitTextToSize(out,180);doc.text(lines,14,35);
+  doc.save('report.pdf');
+}
+
+// ---------- Reminders ----------
+const DEFAULT_REMINDERS=[
+  {title:'ITR Filing Due (Individuals)',date:'07-31'},
+  {title:'Advance Tax — Q1 (15%)',date:'06-15'},
+  {title:'Advance Tax — Q2 (45%)',date:'09-15'},
+  {title:'Advance Tax — Q3 (75%)',date:'12-15'},
+  {title:'Advance Tax — Q4 (100%)',date:'03-15'},
+  {title:'Form 16 Collection (employer)',date:'06-15'},
+  {title:'AIS / Form 26AS Availability Check',date:'06-30'},
+  {title:'Investment Proof Submission to Employer',date:'01-31'},
+  {title:'Bank Interest Certificate Collection',date:'04-30'},
+];
+function renderReminders(){
+  const y=new Date().getFullYear();
+  const html=DEFAULT_REMINDERS.map(r=>{
+    const [m,d]=r.date.split('-');const dt=new Date(y,+m-1,+d);if(dt<new Date())dt.setFullYear(y+1);
+    const days=Math.ceil((dt-new Date())/86400000);
+    return `<div class="cat"><div><b>${r.title}</b><div style="font-size:11px;color:var(--mut)">${dt.toLocaleDateString()}</div></div><span class="status ${days<30?'pending':'uploaded'}">in ${days} days</span></div>`;
+  }).join('');
+  document.getElementById('reminders').innerHTML=html;
+  const d=curData();
+  document.getElementById('customRem').innerHTML=(d?.reminders||[]).map((r,i)=>`<div class="cat"><div><b>${r.title}</b><div style="font-size:11px;color:var(--mut)">${r.date}</div></div><button class="btn sm danger" onclick="delRem(${i})">✕</button></div>`).join('');
+}
+function addReminder(){const d=curData();const t=rTitle.value,dt=rDate.value;if(!t||!dt)return;d.reminders.push({title:t,date:dt});saveAll();rTitle.value='';rDate.value='';renderReminders()}
+function delRem(i){const d=curData();d.reminders.splice(i,1);saveAll();renderReminders()}
+
+// ---------- Settings ----------
+function setPin(){const v=setPin_v();state.settings.pin=v||null;saveAll();toast('PIN updated')}
+function setPin_v(){return document.getElementById('setPin').value}
+function clearPin(){state.settings.pin=null;saveAll();toast('PIN cleared')}
+function saveSettings(){state.settings.timeout=+document.getElementById('setTimeout').value||0;saveAll();toast('Saved');resetTimeout()}
+async function backupAll(){
+  const files={};
+  for(const y of state.years) for(const d of (state.data[y.id]?.docs||[])){const f=await idbGet(d.id);if(f){files[d.id]={name:f.name,type:f.type,size:f.size,b64:btoa(String.fromCharCode(...new Uint8Array(f.data)))}}}
+  const blob=new Blob([JSON.stringify({years:state.years,data:state.data,settings:state.settings,files},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='taxvault-backup.json';a.click();
+}
+async function restoreAll(e){
+  const f=e.target.files[0];if(!f)return;const j=JSON.parse(await f.text());
+  state.years=j.years||[];state.data=j.data||{};state.settings=j.settings||state.settings;state.currentYear=state.years[0]?.id||null;
+  if(j.files)for(const [k,v] of Object.entries(j.files)){const bin=Uint8Array.from(atob(v.b64),c=>c.charCodeAt(0));await idbPut(k,{name:v.name,type:v.type,size:v.size,data:bin.buffer})}
+  saveAll();renderAll();toast('Restored');
+}
+async function wipeAll(){if(!confirm('Erase EVERYTHING?'))return;for(const y of state.years)for(const d of (state.data[y.id]?.docs||[]))await idbDel(d.id);localStorage.clear();location.reload()}
+
+// ---------- Dashboard ----------
+let chartBar,chartDoc;
+function renderDash(){
+  const d=curData();if(!d)return;
+  const docs=d.docs;
+  const uploaded=docs.length;
+  const required=Object.values(CATEGORIES).flat().length;
+  const missing=required-new Set(docs.map(x=>x.category)).size;
+  const verified=docs.filter(x=>x.status==='Verified').length;
+  const s=d.summary||{};
+  const fmt=n=>'₹'+Math.round(n||0).toLocaleString('en-IN');
+  document.getElementById('dashCards').innerHTML=[
+    ['Financial Year',curYear()?.name||'—'],
+    ['Total Documents',uploaded],
+    ['Verified',verified],
+    ['Missing Categories',missing],
+    ['Recommended Regime',s.better||'—'],
+    ['Estimated Tax Payable',s.bal>=0?fmt(s.bal):'—'],
+    ['Estimated Refund',s.bal<0?fmt(-s.bal):'—'],
+    ['Completion',Math.round((required-missing)/required*100)+'%'],
+  ].map(c=>`<div class="card"><h4>${c[0]}</h4><div class="v">${c[1]}</div></div>`).join('');
+
+  document.getElementById('recent').innerHTML=(d.activity||[]).slice(0,10).map(a=>`<div class="cat"><div>${a.msg}</div><div style="color:var(--mut);font-size:11px">${new Date(a.t).toLocaleString()}</div></div>`).join('')||'<div style="color:var(--mut)">No activity yet.</div>';
+
+  if(chartBar)chartBar.destroy();
+  chartBar=new Chart(document.getElementById('chartBar'),{type:'bar',data:{labels:['Income','Deductions','Tax'],datasets:[{data:[s.inc||0,s.dedOld||0,s.totRec||0],backgroundColor:['#6b8afd','#22c55e','#ef4444']}]},options:{plugins:{legend:{display:false}},scales:{y:{ticks:{color:'#9aa6d6'}},x:{ticks:{color:'#9aa6d6'}}}}});
+  if(chartDoc)chartDoc.destroy();
+  const cnt={Uploaded:0,Verified:0,Submitted:0,Pending:0};docs.forEach(x=>cnt[x.status]=(cnt[x.status]||0)+1);
+  chartDoc=new Chart(document.getElementById('chartDoc'),{type:'doughnut',data:{labels:Object.keys(cnt),datasets:[{data:Object.values(cnt),backgroundColor:['#06b6d4','#22c55e','#8b5cf6','#f59e0b']}]},options:{plugins:{legend:{labels:{color:'#9aa6d6'}}}}});
+}
+
+// ---------- Render ----------
+function renderAll(){renderFYSelect();renderFYList();renderDocs();renderChecklist();loadTaxForm();renderReminders();renderDash()}
+
+</script>
+</body>
+</html>
